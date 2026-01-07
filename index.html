@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FiadoFácil | Gestão Financeira</title>
+    <title>FiadoFácil | Gestão e Notificações</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -29,12 +29,10 @@
             <section id="tela-home" class="tela">
                 <div class="centered-container">
                     <h1>Resumo do Caixa</h1>
-                    
                     <div class="card-total card-pendente">
                         <p>Total Pendente</p>
                         <h2 id="total-geral">R$ 0,00</h2>
                     </div>
-
                     <div class="card-total card-pago">
                         <p>Total Recebido</p>
                         <h2 id="total-pago">R$ 0,00</h2>
@@ -62,19 +60,15 @@
                         <select id="select-cliente" required></select>
                         <input type="number" id="valor-venda" step="0.01" placeholder="Valor Total R$" required>
                         <input type="text" id="desc-venda" placeholder="Descrição da Compra" required>
-                        
                         <div class="form-group">
                             <label>Data de Vencimento *</label>
                             <input type="date" id="vencimento-venda" required>
                         </div>
-
                         <div class="checkbox-group">
                             <label for="check-parcelado">Pagamento Parcelado?</label>
                             <input type="checkbox" id="check-parcelado">
                         </div>
-                        
                         <input type="number" id="qtd-vezes" placeholder="Nº de Parcelas" min="1" style="display: none;">
-                        
                         <button type="submit" class="btn-primary">Confirmar Venda</button>
                     </form>
                 </div>
@@ -82,7 +76,7 @@
 
             <section id="tela-historico" class="tela" style="display:none;">
                 <div class="centered-container">
-                    <h2><i class="fas fa-list-ul"></i> Histórico Geral</h2>
+                    <h2><i class="fas fa-list-ul"></i> Histórico e Cobranças</h2>
                     <div id="lista-historico" class="full-width"></div>
                 </div>
             </section>
