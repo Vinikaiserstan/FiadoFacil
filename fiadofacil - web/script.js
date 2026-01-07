@@ -1,171 +1,114 @@
-/**
- * FiadoFácil - Lógica da Aplicação
- * Gestão de dados via LocalStorage
- */
-
 // 1. INICIALIZAÇÃO DE DADOS
-// Tenta carregar os dados do navegador; se não existirem, cria uma estrutura vazia.
-let db = JSON.parse(localStorage.getItem('fiado_db')) || { clientes: [], vendas: [] };
+let db = { clientes: [], vendas: [] };
 
-// 2. CONTROLO DA SIDEBAR (MOBILE)
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('active');
+function carregarDados() {
+    const memoria = localStorage.getItem('fiado_db');
+    if (memoria) db = JSON.parse(memoria);
 }
 
-// 3. NAVEGAÇÃO ENTRE TELAS
-/**
- * @param {string} telaId - O ID da secção que deve ser exibida
- */
-function navegar(telaId) {
-    // Esconder todas as secções com a classe 'tela'
-    document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
-    
-    // Mostrar a secção desejada
-    const telaDestino = document.getElementById('tela-' + telaId);
-    if (telaDestino) {
-        telaDestino.style.display = 'flex'; // Usamos flex para manter o alinhamento centralizado definido no CSS
-    }
-    
-    // Se estivermos em ecrãs pequenos, fecha a sidebar automaticamente após clicar
-    if (window.innerWidth <= 768) {
-        document.getElementById('sidebar').classList.remove('active');
-    }
-
-    // Executar funções específicas de carregamento para cada tela
-    if (telaId === 'home') atualizarDashboard();
-    if (telaId === 'venda') carregarListaClientesParaVenda();
-    if (telaId === 'historico') renderizarHistorico();
-}
-
-// 4. PERSISTÊNCIA DE DADOS
-function salvarNoStorage() {
+function salvar() {
     localStorage.setItem('fiado_db', JSON.stringify(db));
 }
 
-// 5. GESTÃO DE CLIENTES
+// 2. NAVEGAÇÃO
+function navegar(telaId) {
+    document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
+    const destino = document.getElementById('tela-' + telaId);
+    if (destino) destino.style.display = 'flex';
+
+    if (window.innerWidth <= 768) {
+        const sidebar = document.getElementById('sidebar');
+        if(sidebar) sidebar.classList.remove('active');
+    }
+
+    if (telaId === 'home') atualizarHome();
+    if (telaId === 'venda') carregarSelect();
+    if (telaId === 'historico') renderizarHistorico();
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('active');
+}
+
+// 3. LÓGICA DE NEGÓCIO
+function atualizarHome() {
+    const total = db.vendas.reduce((acc, v) => acc + v.valor, 0);
+    const el = document.getElementById('total-geral');
+    if (el) el.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+}
+
+// Cadastro de Cliente (Sem alerta)
 document.getElementById('form-cliente').addEventListener('submit', (e) => {
     e.preventDefault();
-
-    const nome = document.getElementById('nome-cliente').value;
-    const tel = document.getElementById('tel-cliente').value.replace(/\D/g, ''); // Remove caracteres não numéricos
-
-    // Criar novo objeto de cliente
-    const novoCliente = {
-        id: Date.now(), // ID único baseado no timestamp
-        nome: nome,
-        tel: tel
-    };
-
-    db.clientes.push(novoCliente);
-    salvarNoStorage();
-
-    alert('Cliente registado com sucesso!');
-    e.target.reset(); // Limpa o formulário
-    navegar('home');  // Volta para o dashboard
+    db.clientes.push({
+        nome: document.getElementById('nome-cliente').value,
+        tel: document.getElementById('tel-cliente').value.replace(/\D/g, '')
+    });
+    salvar();
+    e.target.reset();
+    navegar('home'); // Vai direto para o início
 });
 
-// 6. GESTÃO DE VENDAS (FIADO)
-function carregarListaClientesParaVenda() {
-    const select = document.getElementById('select-cliente');
-    
-    if (db.clientes.length === 0) {
-        select.innerHTML = '<option value="">Cadastre um cliente primeiro</option>';
-        return;
-    }
-
-    select.innerHTML = '<option value="">Selecione o Cliente</option>';
-    db.clientes.forEach((cliente, index) => {
-        const option = document.createElement('option');
-        option.value = index;
-        option.textContent = cliente.nome;
-        select.appendChild(option);
-    });
+// Carregar Clientes no Select
+function carregarSelect() {
+    const s = document.getElementById('select-cliente');
+    if (!s) return;
+    s.innerHTML = db.clientes.length ? '<option value="">Selecione o Cliente</option>' : '<option>Cadastre um cliente primeiro</option>';
+    db.clientes.forEach((c, i) => s.innerHTML += `<option value="${i}">${c.nome}</option>`);
 }
 
+// Registro de Venda (Sem alerta)
 document.getElementById('form-venda').addEventListener('submit', (e) => {
     e.preventDefault();
+    const idx = document.getElementById('select-cliente').value;
+    if (idx === "") return;
 
-    const indexCliente = document.getElementById('select-cliente').value;
-    const valor = parseFloat(document.getElementById('valor-venda').value);
-    const descricao = document.getElementById('desc-venda').value;
-
-    if (indexCliente === "") {
-        alert("Por favor, selecione um cliente.");
-        return;
-    }
-
-    const cliente = db.clientes[indexCliente];
-
-    // Criar objeto da venda
-    const novaVenda = {
-        clienteNome: cliente.nome,
-        clienteTel: cliente.tel,
-        valor: valor,
-        descricao: descricao,
-        data: new Date().toLocaleDateString('pt-PT')
-    };
-
-    db.vendas.push(novaVenda);
-    salvarNoStorage();
-
-    alert('Venda de fiado registada!');
+    db.vendas.push({
+        nome: db.clientes[idx].nome,
+        tel: db.clientes[idx].tel,
+        valor: parseFloat(document.getElementById('valor-venda').value),
+        desc: document.getElementById('desc-venda').value,
+        data: new Date().toLocaleDateString('pt-br')
+    });
+    salvar();
     e.target.reset();
-    navegar('home');
+    navegar('home'); // Vai direto para o início
 });
 
-// 7. DASHBOARD E HISTÓRICO
-function atualizarDashboard() {
-    // Soma o valor de todas as vendas pendentes no array
-    const totalPendente = db.vendas.reduce((acumulador, venda) => acumulador + venda.valor, 0);
-    
-    const elementoTotal = document.getElementById('total-geral');
-    if (elementoTotal) {
-        elementoTotal.textContent = `R$ ${totalPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-    }
-}
-
+// Renderizar Histórico
 function renderizarHistorico() {
     const container = document.getElementById('lista-historico');
-    container.innerHTML = ''; // Limpa a lista atual
-
-    if (db.vendas.length === 0) {
-        container.innerHTML = '<p style="color: #64748b; margin-top: 20px;">Nenhum registo de fiado encontrado.</p>';
-        return;
-    }
-
-    // Ordenar para mostrar as vendas mais recentes primeiro
-    const vendasInvertidas = [...db.vendas].reverse();
-
-    vendasInvertidas.forEach((venda, index) => {
-        // Criar a mensagem de cobrança para o WhatsApp
-        const mensagemParaWpp = `Olá ${venda.clienteNome}, passando para lembrar da sua pendência no valor de R$ ${venda.valor.toFixed(2)} referente a: ${venda.descricao}.`;
-        const urlWpp = `https://wa.me/55${venda.clienteTel}?text=${encodeURIComponent(mensagemParaWpp)}`;
-
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'item-venda';
-        itemDiv.innerHTML = `
-            <div>
-                <strong style="display: block; font-size: 1.1rem;">${venda.clienteNome}</strong>
-                <small style="color: #64748b;">
-                    <i class="far fa-calendar-alt"></i> ${venda.data} - ${venda.descricao}
-                </small>
-            </div>
-            <div style="text-align: right;">
-                <div style="color: #ef4444; font-weight: 700; font-size: 1.2rem; margin-bottom: 8px;">
-                    R$ ${venda.valor.toFixed(2)}
+    if (!container) return;
+    container.innerHTML = db.vendas.length ? '' : '<p>Sem dívidas ativas.</p>';
+    
+    [...db.vendas].reverse().forEach((v, i) => {
+        const realIdx = db.vendas.length - 1 - i;
+        const msg = encodeURIComponent(`Olá ${v.nome}, lembrete de conta: R$ ${v.valor.toFixed(2)}`);
+        
+        container.innerHTML += `
+            <div class="item-venda">
+                <div><strong>${v.nome}</strong><br><small>${v.data} - ${v.desc}</small></div>
+                <div style="text-align:right">
+                    <div style="color:#ef4444; font-weight:bold">R$ ${v.valor.toFixed(2)}</div>
+                    <div class="actions">
+                        <button class="btn-quitar" onclick="quitar(${realIdx})"><i class="fas fa-check"></i></button>
+                        <a href="https://wa.me/55${v.tel}?text=${msg}" target="_blank" class="btn-wpp"><i class="fab fa-whatsapp"></i></a>
+                    </div>
                 </div>
-                <a href="${urlWpp}" target="_blank" class="btn-wpp">
-                    <i class="fab fa-whatsapp"></i> Cobrar
-                </a>
-            </div>
-        `;
-        container.appendChild(itemDiv);
+            </div>`;
     });
 }
 
-// 8. INICIALIZAÇÃO AO CARREGAR A PÁGINA
-// Garante que o dashboard é atualizado assim que o utilizador abre o site
+// Quitar Dívida (Sem confirmação de tela)
+function quitar(idx) {
+    db.vendas.splice(idx, 1);
+    salvar();
+    renderizarHistorico();
+    atualizarHome();
+}
+
+// Inicialização automática
 window.onload = () => {
-    atualizarDashboard();
+    carregarDados();
+    navegar('home');
 };
