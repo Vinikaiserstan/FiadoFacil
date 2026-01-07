@@ -1,7 +1,7 @@
 :root {
     --primary: #1e293b; --accent: #2563eb; --bg: #f1f5f9;
-    --success: #10b981; --danger: #ef4444; --white: #ffffff;
-    --text-main: #334155; --text-muted: #64748b;
+    --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+    --white: #ffffff; --text-main: #334155; --text-muted: #64748b;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -33,11 +33,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .content { margin-left: 70px; width: 100%; display: flex; justify-content: center; padding: 60px 20px; }
 .centered-container { width: 100%; max-width: 550px; display: flex; flex-direction: column; gap: 25px; }
 
-/* DASHBOARD CARDS */
+/* DASHBOARD */
 .card-total { background: var(--white); padding: 35px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; }
 .card-total p { color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; font-weight: bold; }
 .card-total h2 { font-size: 2.8rem; margin-top: 10px; }
-
 .card-pendente h2 { color: var(--danger); }
 .card-pago h2 { color: var(--success); }
 
@@ -45,24 +44,34 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .styled-form { background: var(--white); padding: 35px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 18px; }
 .form-group { text-align: left; display: flex; flex-direction: column; gap: 5px; font-weight: bold; font-size: 0.85rem; }
 .checkbox-group { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
-
 input, select { padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; width: 100%; }
 .btn-primary { background: var(--accent); color: white; border: none; padding: 18px; border-radius: 12px; font-weight: bold; cursor: pointer; }
 
-/* HISTÓRICO */
+/* ITEM DE VENDA NO HISTÓRICO */
 .item-venda { 
     background: white; padding: 25px; border-radius: 18px; margin-bottom: 15px; 
     display: flex; justify-content: space-between; gap: 15px; 
-    border-left: 6px solid var(--danger); box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border-left: 6px solid #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
-.status-pago { border-left-color: var(--success); opacity: 0.9; }
+
+/* CORES DE NOTIFICAÇÃO */
+.status-pago { border-left-color: var(--success) !important; opacity: 0.8; }
+.atrasado { border-left-color: var(--danger) !important; background: #fff1f2; }
+.proximo { border-left-color: var(--warning) !important; background: #fffbeb; }
+
+.badge-alerta { 
+    font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; 
+    font-weight: bold; text-transform: uppercase; display: inline-block; margin-top: 5px;
+}
+.atrasado .badge-alerta { background: var(--danger); color: white; }
+.proximo .badge-alerta { background: var(--warning); color: white; }
 
 .valor-acoes { text-align: right; min-width: 120px; }
-.valor-text { font-weight: 800; font-size: 1.2rem; color: var(--danger); margin-bottom: 10px; }
-.status-pago .valor-text { color: var(--success); }
+.valor-text { font-weight: 800; font-size: 1.2rem; margin-bottom: 10px; }
+.atrasado .valor-text { color: var(--danger); }
 
 .actions { display: flex; gap: 8px; justify-content: flex-end; }
-.btn-wpp, .btn-quitar { padding: 12px; border-radius: 10px; color: white; border: none; cursor: pointer; text-decoration: none; }
+.btn-wpp, .btn-quitar { padding: 12px; border-radius: 10px; color: white; border: none; cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center; }
 .btn-wpp { background: var(--success); }
 .btn-quitar { background: var(--accent); }
 
