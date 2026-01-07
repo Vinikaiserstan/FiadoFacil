@@ -1,25 +1,19 @@
 :root {
-    --primary: #1e293b;
-    --accent: #2563eb;
-    --bg: #f8fafc;
-    --success: #22c55e;
-    --danger: #ef4444;
-    --white: #ffffff;
+    --primary: #1e293b; --accent: #2563eb; --bg: #f8fafc;
+    --success: #22c55e; --danger: #ef4444; --white: #ffffff;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', sans-serif; background: var(--bg); overflow-x: hidden; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: #334155; }
 
 .app-container { display: flex; min-height: 100vh; }
 
-/* SIDEBAR HOVER */
 .sidebar {
     width: 70px; height: 100vh; background: var(--primary);
     position: fixed; left: 0; top: 0; transition: width 0.3s ease;
     z-index: 1000; overflow: hidden; display: flex; flex-direction: column;
 }
 .sidebar:hover { width: 240px; }
-
 .sidebar-header { height: 70px; display: flex; align-items: center; padding: 0 25px; background: rgba(0,0,0,0.2); }
 .logo-icon { font-size: 1.5rem; color: var(--accent); min-width: 30px; }
 .logo-text { margin-left: 20px; font-weight: 700; color: white; opacity: 0; transition: 0.2s; white-space: nowrap; }
@@ -34,33 +28,31 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); overflow-x: hidd
 .nav-item .text { margin-left: 20px; opacity: 0; white-space: nowrap; }
 .sidebar:hover .text { opacity: 1; }
 
-/* CONTEÚDO CENTRALIZADO */
 .content { margin-left: 70px; width: 100%; display: flex; justify-content: center; padding: 60px 20px; }
-.centered-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; }
+.centered-container { width: 100%; max-width: 550px; display: flex; flex-direction: column; align-items: center; }
 
-h1, h2 { margin-bottom: 30px; color: var(--primary); text-align: center; }
+h1, h2 { margin-bottom: 25px; color: var(--primary); text-align: center; }
 
 .card-total { background: var(--white); padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; text-align: center; }
-.card-total h2 { font-size: 3rem; color: var(--danger); margin: 10px 0 0 0; }
+.card-total h2 { font-size: 3rem; color: var(--danger); margin-top: 10px; }
 
 .styled-form { background: var(--white); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; display: flex; flex-direction: column; gap: 15px; }
-input, select { padding: 15px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 1rem; }
+.form-group { text-align: left; width: 100%; display: flex; flex-direction: column; gap: 5px; font-size: 0.9rem; font-weight: 600; }
+.checkbox-group { display: flex; align-items: center; gap: 10px; width: 100%; font-size: 0.9rem; }
 
+input, select { padding: 14px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 1rem; width: 100%; }
 .btn-primary { background: var(--accent); color: white; border: none; padding: 18px; border-radius: 10px; font-weight: 600; cursor: pointer; }
 
-/* HISTÓRICO E BOTÕES */
 .full-width { width: 100%; }
 .item-venda { background: white; padding: 20px; border-radius: 15px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border-left: 5px solid var(--accent); }
+.actions { display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end; }
+.btn-wpp { background: var(--success); color: white; text-decoration: none; padding: 10px 12px; border-radius: 8px; }
+.btn-quitar { background: var(--accent); color: white; border: none; padding: 10px 12px; border-radius: 8px; cursor: pointer; }
 
-.actions { display: flex; gap: 8px; }
-.btn-wpp { background: var(--success); color: white; text-decoration: none; padding: 10px; border-radius: 8px; }
-.btn-quitar { background: var(--accent); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; }
-
-/* MOBILE */
 @media (max-width: 768px) {
     .sidebar { width: 0; }
-    .sidebar.active { width: 240px; }
+    .sidebar.active { width: 250px; }
     .sidebar.active .text, .sidebar.active .logo-text { opacity: 1; }
     .content { margin-left: 0; padding-top: 100px; }
-    .mobile-toggle { display: block; position: fixed; top: 20px; left: 20px; z-index: 1100; background: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 10px; }
+    .mobile-toggle { display: block; position: fixed; top: 20px; left: 20px; z-index: 1100; background: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 10px; cursor: pointer; }
 }
