@@ -18,7 +18,6 @@ function atualizarDashboard() {
     document.getElementById('total-pago').innerText = `R$ ${pago.toFixed(2)}`;
 }
 
-// CADASTRO ATUALIZADO
 document.getElementById('form-cliente').onsubmit = (e) => {
     e.preventDefault();
     db.clientes.push({ 
@@ -80,7 +79,7 @@ function renderizarHistorico() {
                 <div style="text-align:right">
                     <strong>R$ ${v.valor.toFixed(2)}</strong><br>
                     <div style="display:flex; gap:10px; margin-top:10px; justify-content: flex-end;">
-                        ${!v.pago ? `<button onclick="quitar(${i})" style="cursor:pointer; padding:5px 10px; border-radius:5px; border:1px solid #ddd;">✓</button>` : ''}
+                        ${!v.pago ? `<button onclick="quitar(${i})" style="cursor:pointer; background:#eee; padding:5px 10px; border-radius:5px;">✓</button>` : ''}
                         <a href="https://wa.me/55${v.tel}?text=${msg}" target="_blank" class="btn-wpp"><i class="fab fa-whatsapp"></i></a>
                     </div>
                 </div>
