@@ -14,7 +14,7 @@
     <div class="app-container">
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <span class="logo-icon"><i class="fas fa-robot"></i></span>
+                <i class="fas fa-robot logo-icon"></i>
                 <span class="logo-text">FiadoFácil</span>
             </div>
             <nav class="sidebar-nav">
@@ -39,7 +39,7 @@
                     <h2>Cadastrar Cliente</h2>
                     <form id="form-cliente" class="styled-form">
                         <input type="text" id="nome-cliente" placeholder="Nome Completo *" required>
-                        <input type="tel" id="tel-cliente" placeholder="WhatsApp (DDD + Número) *" required>
+                        <input type="tel" id="tel-cliente" placeholder="WhatsApp *" required>
                         <input type="email" id="email-cliente" placeholder="E-mail">
                         <input type="text" id="end-cliente" placeholder="Endereço Completo">
                         <div class="form-group">
@@ -51,29 +51,7 @@
                 </div>
             </section>
 
-            <section id="tela-venda" class="tela" style="display:none;">
-                <div class="centered-container">
-                    <h2>Nova Venda</h2>
-                    <form id="form-venda" class="styled-form">
-                        <select id="select-cliente" required></select>
-                        <input type="number" id="valor-venda" step="0.01" placeholder="Valor R$" required>
-                        <input type="text" id="desc-venda" placeholder="Descrição" required>
-                        <div class="form-group">
-                            <label>Vencimento *</label>
-                            <input type="date" id="vencimento-venda" required>
-                        </div>
-                        <button type="submit" class="btn-primary">Registrar Venda</button>
-                    </form>
-                </div>
-            </section>
-
-            <section id="tela-historico" class="tela" style="display:none;">
-                <div class="centered-container">
-                    <h2>Fila de Cobrança</h2>
-                    <div id="lista-historico" class="full-width"></div>
-                </div>
-            </section>
-        </main>
+            </main>
     </div>
     <script src="script.js"></script>
 </body>
