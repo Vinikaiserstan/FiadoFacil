@@ -8,7 +8,9 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
     <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+
     <div class="app-container">
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -36,9 +38,15 @@
                 <div class="centered-container">
                     <h2>Cadastrar Cliente</h2>
                     <form id="form-cliente" class="styled-form">
-                        <input type="text" id="nome-cliente" placeholder="Nome *" required>
+                        <input type="text" id="nome-cliente" placeholder="Nome Completo *" required>
                         <input type="tel" id="tel-cliente" placeholder="WhatsApp *" required>
-                        <button type="submit" class="btn-primary">Salvar</button>
+                        <input type="email" id="email-cliente" placeholder="E-mail">
+                        <input type="text" id="end-cliente" placeholder="Endereço Completo">
+                        <div class="form-group">
+                            <label>Data de Nascimento</label>
+                            <input type="date" id="nasc-cliente">
+                        </div>
+                        <button type="submit" class="btn-primary">Salvar Cliente</button>
                     </form>
                 </div>
             </section>
@@ -54,21 +62,4 @@
                             <label>Vencimento *</label>
                             <input type="date" id="vencimento-venda" required>
                         </div>
-                        <button type="submit" class="btn-primary">Registrar</button>
-                    </form>
-                </div>
-            </section>
-
-            <section id="tela-historico" class="tela" style="display:none;">
-                <div class="centered-container">
-                    <h2>Fila de Cobrança Automática</h2>
-                    <div id="lista-historico" class="full-width"></div>
-                </div>
-            </section>
-        </main>
-    </div>
-    <script src="script.js"></script>
-</body>
-</html>
-
-
+                        <button type="submit" class="btn-primary">Registrar Venda</button>
