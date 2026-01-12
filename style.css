@@ -1,73 +1,145 @@
 :root {
-    --primary: #1e293b; --accent: #2563eb; --bg: #f8fafc;
-    --success: #10b981; --danger: #ef4444; --text-main: #334155;
+    --primary: #1e293b; 
+    --accent: #2563eb; 
+    --bg: #f8fafc;
+    --success: #10b981; 
+    --danger: #ef4444; 
+    --text-main: #334155;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; outline: none; border: none; }
+/* RESET TOTAL PARA REMOVER LINHAS */
+* { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    border: none !important; /* Remove qualquer linha lateral ou de borda */
+    outline: none !important;
+    text-decoration: none;
+}
 
 body { 
     background: var(--bg); 
     color: var(--text-main); 
     font-family: 'Inter', sans-serif;
-    overflow-x: hidden;
+    overflow-x: hidden; /* Impede a barra de rolagem lateral */
+    width: 100vw;
+    height: 100vh;
 }
 
-.app-container { display: flex; width: 100%; min-height: 100vh; }
+.app-container { 
+    display: flex; 
+    width: 100%; 
+    height: 100%;
+}
 
-/* SIDEBAR - Sem linhas laterais */
+/* SIDEBAR - LIMPEZA TOTAL */
 .sidebar { 
-    width: 70px; height: 100vh; background: var(--primary); 
-    position: fixed; transition: 0.3s ease; overflow: hidden; z-index: 1000;
+    width: 70px; 
+    height: 100vh; 
+    background: var(--primary); 
+    position: fixed; 
+    left: 0;
+    top: 0;
+    transition: 0.3s ease; 
+    z-index: 1000;
+    box-shadow: none; /* Remove sombras que podem parecer linhas */
 }
+
 .sidebar:hover { width: 240px; }
 
-.sidebar-header { height: 70px; display: flex; align-items: center; padding: 0 22px; color: white; background: rgba(0,0,0,0.1); }
-.nav-item { width: 100%; padding: 20px 25px; background: none; color: #94a3b8; display: flex; align-items: center; cursor: pointer; }
+.sidebar-header { 
+    height: 70px; 
+    display: flex; 
+    align-items: center; 
+    padding: 0 22px; 
+    color: white; 
+    background: rgba(0,0,0,0.1); 
+}
+
+.nav-item { 
+    width: 100%; 
+    padding: 20px 25px; 
+    background: transparent; 
+    color: #94a3b8; 
+    display: flex; 
+    align-items: center; 
+    cursor: pointer;
+}
+
 .nav-item:hover { background: #334155; color: white; }
-.nav-item .text { margin-left: 20px; opacity: 0; white-space: nowrap; }
+.nav-item i { font-size: 1.2rem; min-width: 25px; text-align: center; }
+.nav-item .text { margin-left: 20px; opacity: 0; white-space: nowrap; transition: 0.2s; }
 .sidebar:hover .text { opacity: 1; }
 
-/* CONTENT */
+/* CONTEÚDO PRINCIPAL - AJUSTE DE ESPAÇAMENTO */
 .content { 
-    margin-left: 70px; 
+    margin-left: 70px; /* Exatamente a largura da sidebar */
     flex: 1;
-    padding: 40px 20px; 
+    min-height: 100vh;
+    padding: 40px; 
     display: flex; 
     justify-content: center;
+    background: var(--bg);
 }
-.centered-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 20px; }
 
-/* CARDS E FORM */
-.card-total { background: white; padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-.card-pendente h2 { color: var(--danger); font-size: 2.2rem; }
-.card-pago h2 { color: var(--success); font-size: 2.2rem; }
-
-.styled-form { background: white; padding: 30px; border-radius: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-.form-group { display: flex; flex-direction: column; gap: 5px; text-align: left; }
-.form-group label { font-size: 0.8rem; font-weight: bold; color: #64748b; }
-
-input, select { padding: 14px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 1rem; background: #fff; width: 100%; }
-input:focus { border-color: var(--accent); }
-
-.btn-primary { background: var(--accent); color: white; padding: 16px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-.btn-primary:hover { filter: brightness(1.1); }
-
-/* HISTÓRICO */
-.item-venda { 
-    background: white; padding: 20px; border-radius: 15px; margin-bottom: 12px;
-    display: flex; justify-content: space-between; align-items: center; 
-    border-left: 6px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+.centered-container { 
+    width: 100%; 
+    max-width: 500px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 25px; 
 }
-.notificar-agora { border-left-color: var(--danger); background: #fff1f2; animation: pulse 2s infinite; }
 
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+/* FORMULÁRIOS E CARDS */
+.styled-form, .card-total {
+    background: white; 
+    padding: 30px; 
+    border-radius: 16px; 
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); /* Sombra suave no lugar de bordas */
+}
 
-.badge { background: var(--danger); color: white; font-size: 0.7rem; padding: 3px 7px; border-radius: 5px; font-weight: bold; display: inline-block; margin-top: 5px; }
-.btn-wpp { background: var(--success); color: white; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+input, select {
+    background: #f1f5f9;
+    padding: 14px;
+    border-radius: 10px;
+    margin-bottom: 5px;
+    width: 100%;
+    font-size: 1rem;
+    color: var(--text-main);
+}
 
+.form-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    padding: 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+/* MOBILE */
 @media (max-width: 768px) {
     .sidebar { width: 0; }
     .sidebar.active { width: 240px; }
-    .content { margin-left: 0; padding-top: 80px; }
-    .mobile-toggle { display: block; position: fixed; top: 20px; left: 20px; z-index: 1100; background: var(--primary); color: white; padding: 12px; border-radius: 8px; }
+    .content { margin-left: 0; padding: 20px; padding-top: 80px; }
+    .mobile-toggle { 
+        display: block !important; 
+        position: fixed; 
+        top: 15px; 
+        left: 15px; 
+        z-index: 1100; 
+        padding: 10px; 
+        background: var(--primary); 
+        color: white; 
+        border-radius: 8px;
+    }
 }
