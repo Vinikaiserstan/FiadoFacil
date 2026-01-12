@@ -4,35 +4,49 @@
     --bg: #f8fafc;
     --success: #10b981; 
     --danger: #ef4444; 
-    --warning: #f59e0b;
     --text-main: #334155;
     --sidebar-w: 240px;
     --sidebar-collapsed: 70px;
 }
 
-/* Reset sem quebrar o layout */
+/* RESET ESPECÍFICO PARA CHROME */
 * { 
     margin: 0; 
     padding: 0; 
     box-sizing: border-box; 
     border: none; 
     outline: none;
+    -webkit-tap-highlight-color: transparent; /* Remove brilho azul ao tocar no Chrome Mobile */
+}
+
+/* Remove a barra de rolagem branca clássica do Chrome para um visual limpo */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
 }
 
 body { 
     background-color: var(--bg); 
     color: var(--text-main); 
-    font-family: 'Inter', -apple-system, sans-serif;
+    font-family: 'Inter', sans-serif;
     overflow-x: hidden;
-    width: 100vw;
+    width: 100%;
+    min-height: 100vh;
 }
 
 .app-container {
     display: flex;
+    width: 100%;
     min-height: 100vh;
 }
 
-/* SIDEBAR - CORES E ESTILO ANTERIOR */
+/* SIDEBAR COM DEGRADÊ E SOMBRA */
 .sidebar {
     width: var(--sidebar-collapsed);
     background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
@@ -43,7 +57,7 @@ body {
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1000;
     overflow: hidden;
-    box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
 }
 
 .sidebar:hover { width: var(--sidebar-w); }
@@ -54,64 +68,60 @@ body {
     align-items: center;
     padding: 0 22px;
     color: white;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.03);
 }
 
 .nav-item {
     width: 100%;
     padding: 18px 25px;
-    background: transparent;
     color: #94a3b8;
     display: flex;
     align-items: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: 0.2s;
+    text-decoration: none;
 }
 
-.nav-item:hover { 
-    background: rgba(255,255,255,0.1); 
-    color: white; 
-}
-
+.nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
 .nav-item i { min-width: 25px; font-size: 1.2rem; }
 .nav-item .text { margin-left: 20px; opacity: 0; white-space: nowrap; transition: 0.2s; }
 .sidebar:hover .text { opacity: 1; }
 
-/* CONTEÚDO PRINCIPAL - REFORÇADO CONTRA BARRAS BRANCAS */
+/* ÁREA DE CONTEÚDO - PREENCHIMENTO TOTAL */
 .content {
     flex: 1;
     margin-left: var(--sidebar-collapsed);
     padding: 40px 20px;
+    background: var(--bg);
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-height: 100vh;
-    background: var(--bg); /* Garante que o fundo cubra tudo */
+    transition: margin-left 0.3s;
 }
 
 .centered-container { width: 100%; max-width: 500px; }
 
-/* CARDS COM ANIMAÇÕES E CORES */
+/* CARDS E FORMULÁRIOS COM CORES RECUPERADAS */
 .card-total { 
     background: white; 
     padding: 30px; 
     border-radius: 20px; 
     text-align: center; 
     margin-bottom: 20px; 
-    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
 }
-
 .card-pendente h2 { color: var(--danger); font-size: 2.5rem; }
 .card-pago h2 { color: var(--success); font-size: 2.5rem; }
 
 .styled-form { 
     background: white; 
     padding: 30px; 
-    border-radius: 24px; 
+    border-radius: 20px; 
     display: flex; 
     flex-direction: column; 
     gap: 15px; 
-    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
 }
 
 input, select { 
@@ -120,10 +130,8 @@ input, select {
     border-radius: 12px; 
     font-size: 1rem; 
     color: var(--text-main);
-    transition: 0.2s;
+    width: 100%;
 }
-
-input:focus { background: #e2e8f0; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
 
 .btn-primary { 
     background: var(--accent); 
@@ -132,45 +140,38 @@ input:focus { background: #e2e8f0; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     border-radius: 12px; 
     font-weight: bold; 
     cursor: pointer; 
-    transition: transform 0.2s, filter 0.2s;
+    transition: 0.3s;
 }
+.btn-primary:hover { filter: brightness(1.1); transform: translateY(-2px); }
 
-.btn-primary:hover { transform: translateY(-2px); filter: brightness(1.1); }
-
-/* ANIMAÇÃO DE COBRANÇA (PULSAR) */
+/* ANIMAÇÃO DE PULSAR (PARA COBRANÇAS) */
 .item-venda { 
-    background: white; padding: 20px; border-radius: 18px; margin-bottom: 12px;
-    display: flex; justify-content: space-between; align-items: center; 
-    border-left: 6px solid #e2e8f0;
+    background: white; padding: 20px; border-radius: 15px; margin-bottom: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
 }
 
 .notificar-agora { 
-    border-left-color: var(--danger); 
     background: #fff1f2; 
-    animation: pulse-red 2s infinite; 
+    border-left: 5px solid var(--danger);
+    animation: pulse-border 2s infinite; 
 }
 
-@keyframes pulse-red {
-    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.2); }
-    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+@keyframes pulse-border {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
 }
 
-.btn-wpp { 
-    background: var(--success); color: white; width: 45px; height: 45px; 
-    border-radius: 12px; display: flex; align-items: center; justify-content: center; 
-    transition: 0.2s;
-}
-.btn-wpp:hover { transform: scale(1.1); }
-
-/* RESPONSIVIDADE */
+/* RESPONSIVIDADE PARA CHROME MOBILE */
 @media (max-width: 768px) {
-    .sidebar { left: -80px; }
-    .sidebar.active { left: 0; width: var(--sidebar-w); }
+    .sidebar { left: -80px; box-shadow: none; }
+    .sidebar.active { left: 0; width: var(--sidebar-w); box-shadow: 10px 0 30px rgba(0,0,0,0.3); }
     .content { margin-left: 0; padding-top: 80px; }
     .mobile-toggle { 
-        display: block !important; 
+        display: flex !important; 
         position: fixed; top: 15px; left: 15px; z-index: 1100; 
-        background: var(--primary); color: white; padding: 12px; border-radius: 10px;
+        background: var(--primary); color: white; width: 45px; height: 45px;
+        align-items: center; justify-content: center; border-radius: 10px;
     }
 }
