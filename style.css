@@ -9,7 +9,7 @@
     --sidebar-collapsed: 70px;
 }
 
-/* 1. RESET DE COMPATIBILIDADE */
+/* RESET E CORREÇÃO DE FUNDO */
 * { 
     margin: 0; 
     padding: 0; 
@@ -19,70 +19,153 @@
 }
 
 body { 
-    background-color: var(--bg); 
-    color: var(--text-main); 
+    background-color: var(--bg) !important; 
     font-family: 'Inter', sans-serif;
     overflow-x: hidden;
-    width: 100%;
-    min-height: 100vh;
 }
 
-.app-container {
-    display: flex;
-    width: 100%;
+/* CONTAINER PRINCIPAL */
+.app-container { 
+    display: flex; 
+    width: 100%; 
     min-height: 100vh;
+    background-color: var(--bg);
 }
 
-/* 2. SIDEBAR - CORREÇÃO PARA EXPLORER/EDGE */
+/* SIDEBAR - CORREÇÃO DE FUNDO BRANCO */
 .sidebar {
     width: var(--sidebar-collapsed);
-    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    background: #1e293b !important; /* Cor sólida para evitar falhas de degradê */
     height: 100vh;
     position: fixed;
     left: 0;
     top: 0;
     transition: width 0.3s ease;
     z-index: 1000;
-    overflow: hidden; /* Corta qualquer vazamento de texto */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .sidebar:hover {
     width: var(--sidebar-w);
 }
 
+/* HEADER DO LOGO */
 .sidebar-header {
     height: 70px;
+    min-height: 70px;
     display: flex;
     align-items: center;
     padding: 0 23px;
-    color: white;
+    color: white !important;
     background: rgba(255, 255, 255, 0.05);
 }
 
-/* O segredo para não vazar no Explorer: display: none */
-.logo-text, .nav-item .text {
-    display: none; 
+/* TEXTO DO LOGO - RESOLVENDO O VAZAMENTO */
+.logo-text {
+    font-weight: bold;
+    font-size: 1.2rem;
     white-space: nowrap;
     margin-left: 20px;
     opacity: 0;
+    display: none; /* Sumir completamente quando fechado */
     transition: opacity 0.2s;
+    color: white !important;
 }
 
-.sidebar:hover .logo-text, 
-.sidebar:hover .nav-item .text {
-    display: inline-block; /* Só renderiza quando a barra expande */
+.sidebar:hover .logo-text {
+    display: block;
     opacity: 1;
 }
 
-.logo-icon, .nav-item i {
-    min-width: 24px;
-    text-align: center;
-    font-size: 1.2rem;
-    color: #94a3b8;
-}
-
-.nav-item:hover i, .nav-item:hover .text {
-    color: white;
+/* NAVEGAÇÃO - LIMPANDO O BRANCO DO EDGE */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    background: transparent !important; /* Força o fundo a não ser branco */
 }
 
 .nav-item {
+    width: 100%;
+    padding: 18px 25px;
+    background: transparent !important;
+    color: #94a3b8 !important;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+}
+
+.nav-item i {
+    min-width: 24px;
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+.nav-item .text {
+    margin-left: 20px;
+    display: none; /* Esconde o texto no Edge quando encolhido */
+    white-space: nowrap;
+}
+
+.sidebar:hover .nav-item .text {
+    display: block;
+}
+
+/* CONTEÚDO PRINCIPAL */
+.content {
+    flex: 1;
+    margin-left: var(--sidebar-collapsed);
+    padding: 40px 20px;
+    background-color: var(--bg);
+    min-height: 100vh;
+}
+
+.centered-container {
+    margin: 0 auto;
+    max-width: 500px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+
+/* ESTILO DOS CARDS */
+.card-total, .styled-form {
+    background: white !important;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important;
+    width: 100%;
+}
+
+/* BOTÃO MOBILE */
+.mobile-toggle {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .sidebar { left: -80px; }
+    .sidebar.active { left: 0; width: var(--sidebar-w); }
+    .sidebar.active .logo-text, .sidebar.active .text { display: block; opacity: 1; }
+    .content { margin-left: 0; padding-top: 80px; }
+    .mobile-toggle {
+        display: block !important;
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 1100;
+        background: var(--primary);
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+    }
+}
