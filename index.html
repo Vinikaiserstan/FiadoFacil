@@ -3,56 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FiadoFácil</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>FiadoFácil Elite</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="not-logged-in">
 
-    <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+    <div id="auth-container">
+        <div class="auth-card">
+            <div class="auth-icon"><i class="fas fa-rocket"></i></div>
+            <h2 id="auth-title">FiadoFácil Pro</h2>
+            <p>Sua gestão financeira simplificada</p>
+            <input type="email" id="auth-email" placeholder="E-mail">
+            <input type="password" id="auth-senha" placeholder="Senha">
+            <button onclick="window.fazerLogin()" class="btn-primary" id="btn-auth">Entrar no Sistema</button>
+            <div class="auth-footer">
+                <a href="#" onclick="window.resetarSenha()">Esqueci minha senha</a>
+                <div class="divider"></div>
+                <span>Novo por aqui? <a href="#" onclick="window.toggleAuthMode()">Criar conta</a></span>
+            </div>
+        </div>
+    </div>
 
     <div class="app-container">
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <i class="fas fa-robot logo-icon"></i>
-                <span class="logo-text">FiadoFácil</span>
-            </div>
-            <nav class="sidebar-nav">
-                <button onclick="navegar('home')" class="nav-item"><i class="fas fa-home"></i> <span class="text">Início</span></button>
-                <button onclick="navegar('cadastro')" class="nav-item"><i class="fas fa-user-plus"></i> <span class="text">Clientes</span></button>
-                <button onclick="navegar('venda')" class="nav-item"><i class="fas fa-cart-plus"></i> <span class="text">Venda</span></button>
-                <button onclick="navegar('historico')" class="nav-item"><i class="fas fa-bell"></i> <span class="text">Cobranças</span></button>
+        <aside class="sidebar">
+            <div class="logo-area"><i class="fas fa-robot"></i> <span class="nav-text">FiadoFácil</span></div>
+            <nav>
+                <button onclick="window.navegar('home')"><i class="fas fa-th-large"></i> <span class="nav-text">Dashboard</span></button>
+                <button onclick="window.navegar('cliente')"><i class="fas fa-user-plus"></i> <span class="nav-text">Clientes</span></button>
+                <button onclick="window.navegar('venda')"><i class="fas fa-cart-plus"></i> <span class="nav-text">Nova Venda</span></button>
+                <button onclick="window.navegar('historico')"><i class="fas fa-receipt"></i> <span class="nav-text">Cobranças</span></button>
+                <button onclick="window.fazerLogout()" class="logout-btn"><i class="fas fa-power-off"></i> <span class="nav-text">Sair</span></button>
             </nav>
         </aside>
 
-        <main class="content">
+        <main class="main-content">
             <section id="tela-home" class="tela">
-                <div class="centered-container">
-                    <h1>Resumo Financeiro</h1>
-                    <div class="card-total card-pendente"><p>Pendente</p><h2 id="total-geral">R$ 0,00</h2></div>
-                    <div class="card-total card-pago"><p>Recebido</p><h2 id="total-pago">R$ 0,00</h2></div>
+                <div class="stats-grid">
+                    <div class="stat-card danger">
+                        <span>A Receber</span>
+                        <h2 id="total-geral">R$ 0,00</h2>
+                    </div>
+                    <div class="stat-card success">
+                        <span>Recebido</span>
+                        <h2 id="total-pago">R$ 0,00</h2>
+                    </div>
+                </div>
+                <div class="chart-container-box">
+                    <canvas id="graficoVendas"></canvas>
                 </div>
             </section>
 
-            <section id="tela-cadastro" class="tela" style="display:none;">
-                <div class="centered-container">
-                    <h2>Cadastrar Cliente</h2>
-                    <form id="form-cliente" class="styled-form">
-                        <input type="text" id="nome-cliente" placeholder="Nome Completo *" required>
-                        <input type="tel" id="tel-cliente" placeholder="WhatsApp *" required>
-                        <input type="email" id="email-cliente" placeholder="E-mail">
-                        <input type="text" id="end-cliente" placeholder="Endereço Completo">
-                        <div class="form-group">
-                            <label>Data de Nascimento</label>
-                            <input type="date" id="nasc-cliente">
-                        </div>
+            <section id="tela-cliente" class="tela">
+                <div class="centered-form">
+                    <form id="form-cliente" class="form-box">
+                        <h2><i class="fas fa-user-plus"></i> Novo Cliente</h2>
+                        <input type="text" id="nome-cliente" placeholder="Nome Completo" required>
+                        <input type="email" id="email-cliente" placeholder="E-mail do Cliente" required>
+                        <input type="tel" id="tel-cliente" placeholder="WhatsApp (Ex: 11999999999)" required>
+                        <input type="text" id="end-cliente" placeholder="Endereço">
                         <button type="submit" class="btn-primary">Salvar Cliente</button>
                     </form>
                 </div>
             </section>
 
-            </main>
+            <section id="tela-venda" class="tela">
+                <div class="centered-form">
+                    <form id="form-venda" class="form-box">
+                        <h2><i class="fas fa-shopping-cart"></i> Lançar Venda</h2>
+                        <select id="select-cliente" required><option value="">Selecione o Cliente</option></select>
+                        <input type="text" id="valor-venda" placeholder="Valor Total R$ 0,00" required>
+                        <input type="text" id="desc-venda" placeholder="Produto/Descrição">
+                        <div class="row">
+                            <div class="col">
+                                <label>Parcelas</label>
+                                <select id="parcelas-venda">
+                                    <option value="1">À Vista</option>
+                                    <option value="2">2x</option>
+                                    <option value="3">3x</option>
+                                    <option value="6">6x</option>
+                                    <option value="12">12x</option>
+                                </select>
+                            </div>
+                            <div class="col">
+                                <label>Vencimento</label>
+                                <input type="date" id="vencimento-venda" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary">Confirmar Venda</button>
+                    </form>
+                </div>
+            </section>
+
+            <section id="tela-historico" class="tela">
+                <div class="filter-bar">
+                    <button class="active" onclick="window.mudarFiltro('todos', this)">Todas</button>
+                    <button onclick="window.mudarFiltro('pendente', this)">Pendentes</button>
+                    <button onclick="window.mudarFiltro('pago', this)">Pagas</button>
+                </div>
+                <div id="lista-historico" class="cards-list"></div>
+            </section>
+        </main>
     </div>
-    <script src="script.js"></script>
+
+    <script type="module" src="script.js"></script>
 </body>
 </html>
