@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyD3bR5q-Lho80p_XAIhsZtolrM8K0-l7EM",
@@ -16,42 +16,59 @@ const db_fire = getFirestore(app);
 const auth = getAuth(app);
 
 let userLogado = null, db = { clientes: [], vendas: [] }, filtro = 'todos', vendaIdAtual = null;
+let isLoginMode = true;
 
-// NAVEGAÇÃO
-window.navegar = (id) => {
-    document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
-    const tela = document.getElementById('tela-' + id);
-    if(tela) {
-        tela.style.display = 'flex';
-        if(id === 'home') {
-            const cards = tela.querySelectorAll('.stat-card');
-            cards.forEach(c => { c.style.animation = 'none'; setTimeout(() => c.style.animation = '', 10); });
-        }
+// --- AUTENTICAÇÃO ---
+window.toggleAuthMode = (e) => {
+    if(e) e.preventDefault();
+    isLoginMode = !isLoginMode;
+    const title = document.getElementById('auth-title');
+    const btn = document.getElementById('btn-auth');
+    const footer = document.getElementById('auth-toggle-text');
+
+    if(isLoginMode) {
+        title.innerText = "Entrar no Sistema";
+        btn.innerText = "Entrar";
+        footer.innerHTML = `Novo por aqui? <a href="#" onclick="window.toggleAuthMode(event)">Criar conta</a>`;
+    } else {
+        title.innerText = "Criar Nova Conta";
+        btn.innerText = "Cadastrar";
+        footer.innerHTML = `Já tem conta? <a href="#" onclick="window.toggleAuthMode(event)">Fazer Login</a>`;
     }
 };
 
-window.toggleFab = () => document.getElementById('fab-menu').classList.toggle('active');
-window.navegarFab = (id) => { window.navegar(id); document.getElementById('fab-menu').classList.remove('active'); };
+window.fazerAuth = async () => {
+    const e = document.getElementById('auth-email').value;
+    const s = document.getElementById('auth-senha').value;
+    if(!e || !s) return alert("Preencha os campos.");
+    try {
+        if(isLoginMode) await signInWithEmailAndPassword(auth, e, s);
+        else { await createUserWithEmailAndPassword(auth, e, s); alert("Conta criada!"); }
+    } catch (err) { alert("Erro: " + err.message); }
+};
 
-// AUTH
 onAuthStateChanged(auth, user => {
     if(user) { 
         userLogado = user; 
         document.body.classList.remove('not-logged-in'); 
         startSync(user.uid); 
         window.navegar('home'); 
-    } else { 
-        document.body.classList.add('not-logged-in'); 
-    }
+    } else { document.body.classList.add('not-logged-in'); }
 });
 
-window.fazerLogin = async () => {
-    const e = document.getElementById('auth-email').value, s = document.getElementById('auth-senha').value;
-    try { await signInWithEmailAndPassword(auth, e, s); } catch { alert("Erro ao entrar."); }
-};
 window.fazerLogout = () => signOut(auth);
 
-// SYNC
+// --- NAVEGAÇÃO ---
+window.navegar = (id) => {
+    document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
+    const tela = document.getElementById('tela-' + id);
+    if(tela) tela.style.display = 'flex';
+};
+
+window.toggleFab = () => document.getElementById('fab-menu').classList.toggle('active');
+window.navegarFab = (id) => { window.navegar(id); document.getElementById('fab-menu').classList.remove('active'); };
+
+// --- DADOS ---
 function startSync(uid) {
     onSnapshot(query(collection(db_fire, "clientes"), where("userId", "==", uid)), s => {
         db.clientes = s.docs.map(d => ({id: d.id, ...d.data()}));
@@ -67,14 +84,10 @@ function startSync(uid) {
 function updateDash() {
     const pen = db.vendas.filter(v => !v.pago).reduce((a,b) => a + b.valor, 0);
     const pag = db.vendas.filter(v => v.pago).reduce((a,b) => a + b.valor, 0);
-    const elPen = document.getElementById('total-geral'), elPag = document.getElementById('total-pago');
-    if(elPen && elPag) {
-        elPen.innerText = `R$ ${pen.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
-        elPag.innerText = `R$ ${pag.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
-    }
+    document.getElementById('total-geral').innerText = `R$ ${pen.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+    document.getElementById('total-pago').innerText = `R$ ${pag.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
 }
 
-// FORMS
 document.getElementById('form-cliente').onsubmit = async (e) => {
     e.preventDefault();
     await addDoc(collection(db_fire, "clientes"), {
@@ -91,7 +104,6 @@ document.getElementById('form-venda').onsubmit = async (e) => {
     const valor = parseFloat(document.getElementById('valor-venda').value.replace(".","").replace(",","."));
     const parcelas = parseInt(document.getElementById('parcelas-venda').value);
     const venc = new Date(document.getElementById('vencimento-venda').value + "T12:00:00");
-    
     for(let i=0; i<parcelas; i++) {
         const d = new Date(venc); d.setMonth(d.getMonth() + i);
         await addDoc(collection(db_fire, "vendas"), {
@@ -103,40 +115,31 @@ document.getElementById('form-venda').onsubmit = async (e) => {
     e.target.reset(); window.navegar('historico');
 };
 
-// HISTORICO
 function renderHistorico() {
     const container = document.getElementById('lista-historico');
-    if(!container) return;
-    container.innerHTML = "";
+    if(!container) return; container.innerHTML = "";
     let lista = [...db.vendas];
     if(filtro === 'pendente') lista = lista.filter(v => !v.pago);
     if(filtro === 'pago') lista = lista.filter(v => v.pago);
-
     lista.sort((a,b) => new Date(a.vencimento) - new Date(b.vencimento)).forEach(v => {
         const venc = new Date(v.vencimento + "T12:00:00"), hoje = new Date(); hoje.setHours(0,0,0,0);
         let classe = v.pago ? "status-pago" : (venc < hoje ? "status-vencido" : "status-pendente");
-        
         container.innerHTML += `
             <div class="item-venda ${classe}">
-                <div class="item-info">
-                    <strong>${v.nome}</strong><br><small>${v.desc}</small><br>
-                    <span style="font-size:0.7rem">${v.vencimento.split('-').reverse().join('/')}</span>
-                </div>
+                <div class="item-info"><strong>${v.nome}</strong><br><small>${v.desc}</small></div>
                 <div class="item-actions">
                     <strong>R$ ${v.valor.toFixed(2)}</strong>
                     <div class="btn-row">
                         <button onclick="window.abrirEdicao('${v.id}')" class="btn-op btn-edit"><i class="fas fa-pen"></i></button>
-                        ${!v.pago ? `
-                            <button onclick="window.abrirLembrete('${v.id}')" class="btn-op btn-wpp"><i class="fab fa-whatsapp"></i></button>
-                            <button onclick="window.quitar('${v.id}')" class="btn-op btn-check"><i class="fas fa-check"></i></button>
-                        ` : '✅'}
+                        ${!v.pago ? `<button onclick="window.abrirLembrete('${v.id}')" class="btn-op btn-wpp"><i class="fab fa-whatsapp"></i></button>
+                        <button onclick="window.quitar('${v.id}')" class="btn-op btn-check"><i class="fas fa-check"></i></button>` : '✅'}
                     </div>
                 </div>
             </div>`;
     });
 }
 
-// LOGICA MODAIS
+// --- MODAIS ---
 window.abrirEdicao = (id) => {
     vendaIdAtual = id; const v = db.vendas.find(x => x.id === id);
     document.getElementById('edit-desc').value = v.desc;
@@ -144,16 +147,18 @@ window.abrirEdicao = (id) => {
     document.getElementById('modal-edit').style.display = 'flex';
 };
 window.salvarEdicao = async () => {
-    const d = document.getElementById('edit-desc').value, v = parseFloat(document.getElementById('edit-valor').value);
-    await updateDoc(doc(db_fire, "vendas", vendaIdAtual), { desc: d, valor: v });
+    await updateDoc(doc(db_fire, "vendas", vendaIdAtual), { 
+        desc: document.getElementById('edit-desc').value, 
+        valor: parseFloat(document.getElementById('edit-valor').value) 
+    });
     window.fecharModal('modal-edit');
 };
 window.apagarVenda = async () => {
-    if(confirm("Deseja apagar?")) { await deleteDoc(doc(db_fire, "vendas", vendaIdAtual)); window.fecharModal('modal-edit'); }
+    if(confirm("Apagar?")) { await deleteDoc(doc(db_fire, "vendas", vendaIdAtual)); window.fecharModal('modal-edit'); }
 };
 window.abrirLembrete = (id) => {
     vendaIdAtual = id; const v = db.vendas.find(x => x.id === id);
-    document.getElementById('msg-whatsapp').value = `Olá ${v.nome}, lembrete de pagamento: R$ ${v.valor.toFixed(2)} (${v.desc}).`;
+    document.getElementById('msg-whatsapp').value = `Olá ${v.nome}, lembrete: R$ ${v.valor.toFixed(2)} (${v.desc}).`;
     document.getElementById('modal-lembrete').style.display = 'flex';
 };
 window.enviarWpp = () => {
@@ -166,10 +171,8 @@ window.quitar = (id) => updateDoc(doc(db_fire, "vendas", id), {pago: true});
 window.mudarFiltro = (f, b) => { 
     filtro = f; 
     document.querySelectorAll('.filter-bar button').forEach(x => x.classList.remove('active'));
-    b.classList.add('active'); 
-    renderHistorico(); 
+    b.classList.add('active'); renderHistorico(); 
 };
-
 document.getElementById('valor-venda').oninput = (e) => {
     let v = e.target.value.replace(/\D/g,''); e.target.value = (v/100).toFixed(2).replace(".",",");
 };
