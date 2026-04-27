@@ -18,47 +18,34 @@ const auth = getAuth(app);
 let userLogado = null, db = { clientes: [], vendas: [] }, filtro = 'todos', vendaIdAtual = null;
 let isLoginMode = true;
 
-// --- AUTENTICAÇÃO ---
+// AUTH
 window.toggleAuthMode = (e) => {
     if(e) e.preventDefault();
     isLoginMode = !isLoginMode;
-    const title = document.getElementById('auth-title');
-    const btn = document.getElementById('btn-auth');
-    const footer = document.getElementById('auth-toggle-text');
-
-    if(isLoginMode) {
-        title.innerText = "Entrar no Sistema";
-        btn.innerText = "Entrar";
-        footer.innerHTML = `Novo por aqui? <a href="#" onclick="window.toggleAuthMode(event)">Criar conta</a>`;
-    } else {
-        title.innerText = "Criar Nova Conta";
-        btn.innerText = "Cadastrar";
-        footer.innerHTML = `Já tem conta? <a href="#" onclick="window.toggleAuthMode(event)">Fazer Login</a>`;
-    }
+    document.getElementById('auth-title').innerText = isLoginMode ? "Entrar no Sistema" : "Criar Nova Conta";
+    document.getElementById('btn-auth').innerText = isLoginMode ? "Entrar" : "Cadastrar";
+    document.getElementById('auth-toggle-text').innerHTML = isLoginMode ? 
+        `Novo por aqui? <a href="#" onclick="window.toggleAuthMode(event)">Criar conta</a>` : 
+        `Já tem conta? <a href="#" onclick="window.toggleAuthMode(event)">Fazer Login</a>`;
 };
 
 window.fazerAuth = async () => {
-    const e = document.getElementById('auth-email').value;
-    const s = document.getElementById('auth-senha').value;
+    const e = document.getElementById('auth-email').value, s = document.getElementById('auth-senha').value;
     if(!e || !s) return alert("Preencha os campos.");
     try {
         if(isLoginMode) await signInWithEmailAndPassword(auth, e, s);
         else { await createUserWithEmailAndPassword(auth, e, s); alert("Conta criada!"); }
-    } catch (err) { alert("Erro: " + err.message); }
+    } catch (err) { alert("Erro na autenticação."); }
 };
 
 onAuthStateChanged(auth, user => {
-    if(user) { 
-        userLogado = user; 
-        document.body.classList.remove('not-logged-in'); 
-        startSync(user.uid); 
-        window.navegar('home'); 
-    } else { document.body.classList.add('not-logged-in'); }
+    if(user) { userLogado = user; document.body.classList.remove('not-logged-in'); startSync(user.uid); window.navegar('home'); }
+    else { document.body.classList.add('not-logged-in'); }
 });
 
 window.fazerLogout = () => signOut(auth);
 
-// --- NAVEGAÇÃO ---
+// NAVEGAÇÃO
 window.navegar = (id) => {
     document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
     const tela = document.getElementById('tela-' + id);
@@ -68,7 +55,7 @@ window.navegar = (id) => {
 window.toggleFab = () => document.getElementById('fab-menu').classList.toggle('active');
 window.navegarFab = (id) => { window.navegar(id); document.getElementById('fab-menu').classList.remove('active'); };
 
-// --- DADOS ---
+// SYNC
 function startSync(uid) {
     onSnapshot(query(collection(db_fire, "clientes"), where("userId", "==", uid)), s => {
         db.clientes = s.docs.map(d => ({id: d.id, ...d.data()}));
@@ -88,6 +75,7 @@ function updateDash() {
     document.getElementById('total-pago').innerText = `R$ ${pag.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
 }
 
+// FORMS
 document.getElementById('form-cliente').onsubmit = async (e) => {
     e.preventDefault();
     await addDoc(collection(db_fire, "clientes"), {
@@ -139,7 +127,7 @@ function renderHistorico() {
     });
 }
 
-// --- MODAIS ---
+// MODAIS
 window.abrirEdicao = (id) => {
     vendaIdAtual = id; const v = db.vendas.find(x => x.id === id);
     document.getElementById('edit-desc').value = v.desc;
@@ -147,10 +135,7 @@ window.abrirEdicao = (id) => {
     document.getElementById('modal-edit').style.display = 'flex';
 };
 window.salvarEdicao = async () => {
-    await updateDoc(doc(db_fire, "vendas", vendaIdAtual), { 
-        desc: document.getElementById('edit-desc').value, 
-        valor: parseFloat(document.getElementById('edit-valor').value) 
-    });
+    await updateDoc(doc(db_fire, "vendas", vendaIdAtual), { desc: document.getElementById('edit-desc').value, valor: parseFloat(document.getElementById('edit-valor').value) });
     window.fecharModal('modal-edit');
 };
 window.apagarVenda = async () => {
@@ -168,11 +153,8 @@ window.enviarWpp = () => {
 };
 window.fecharModal = (id) => document.getElementById(id).style.display = 'none';
 window.quitar = (id) => updateDoc(doc(db_fire, "vendas", id), {pago: true});
-window.mudarFiltro = (f, b) => { 
-    filtro = f; 
-    document.querySelectorAll('.filter-bar button').forEach(x => x.classList.remove('active'));
-    b.classList.add('active'); renderHistorico(); 
-};
+window.mudarFiltro = (f, b) => { filtro = f; document.querySelectorAll('.filter-bar button').forEach(x => x.classList.remove('active')); b.classList.add('active'); renderHistorico(); };
+
 document.getElementById('valor-venda').oninput = (e) => {
     let v = e.target.value.replace(/\D/g,''); e.target.value = (v/100).toFixed(2).replace(".",",");
 };
