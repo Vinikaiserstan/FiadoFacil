@@ -23,12 +23,15 @@ async function trackUsage(evento, detalhes = {}) {
     if (!userLogado) return;
     try {
         await addDoc(collection(db_fire, "telemetria_uso"), {
+            userId: userLogado.uid, // Campo obrigatório pela sua regra
             u: userLogado.email,
             e: evento,
             d: detalhes,
             t: new Date().toISOString()
         });
-    } catch (e) {} // Falha silenciosa
+    } catch (e) { 
+        console.error("Erro na telemetria:", e); 
+    }
 }
 
 // --- AUTH ---
