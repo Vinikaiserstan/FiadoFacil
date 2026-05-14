@@ -70,15 +70,33 @@
             <!-- Cadastro Cliente -->
             <section id="tela-cliente" class="tela">
                 <div class="centered-form">
-                    <form id="form-cliente" class="form-box">
-                        <h2>Novo Cliente</h2>
-                        <label>Nome Completo</label>
-                        <input type="text" id="nome-cliente" required>
-                        <label>WhatsApp (com DDD)</label>
-                        <input type="tel" id="tel-cliente" placeholder="Ex: 11999999999" required>
-                        <button type="submit" class="btn-primary">Salvar Cliente</button>
-                    </form>
+                    <div class="form-box">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2 style="margin: 0;">Novo Cliente</h2>
+                            <button onclick="window.navegar('lista-clientes')" class="btn-op" style="width: auto; padding: 0 15px; font-size: 0.8rem;">
+                                <i class="fas fa-list"></i> Ver Lista
+                            </button>
+                        </div>
+                        <form id="form-cliente">
+                            <label>Nome Completo</label>
+                            <input type="text" id="nome-cliente" required>
+                            <label>WhatsApp (com DDD)</label>
+                            <input type="tel" id="tel-cliente" placeholder="Ex: 11999999999" required>
+                            <button type="submit" class="btn-primary">Salvar Cliente</button>
+                        </form>
+                    </div>
                 </div>
+            </section>
+
+            <!-- Listagem de Clientes -->
+            <section id="tela-lista-clientes" class="tela">
+                <div class="filter-bar" style="justify-content: space-between; align-items: center; width: 100%;">
+                    <button onclick="window.navegar('cliente')" style="background: white; color: var(--primary);">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </button>
+                    <span style="font-weight: 800; color: var(--dark); margin-right: 15px;">Meus Clientes</span>
+                </div>
+                <div id="tabela-clientes" class="cards-list"></div>
             </section>
 
             <!-- Lançar Venda com Autocomplete -->
@@ -136,6 +154,17 @@
             <label>Valor</label><input type="number" step="0.01" id="edit-valor">
             <button onclick="window.salvarEdicao()" class="btn-primary">Salvar</button>
             <button onclick="window.apagarVenda()" class="btn-danger-text">Excluir Cobrança</button>
+        </div>
+    </div>
+
+    <div id="modal-edit-cliente" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="window.fecharModal('modal-edit-cliente')">&times;</span>
+            <h3>Editar Cliente</h3>
+            <label>Nome</label><input type="text" id="edit-cliente-nome">
+            <label>WhatsApp</label><input type="tel" id="edit-cliente-tel">
+            <button onclick="window.salvarEdicaoCliente()" class="btn-primary">Salvar Alterações</button>
+            <button onclick="window.apagarCliente()" class="btn-danger-text">Excluir Cliente</button>
         </div>
     </div>
 

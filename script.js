@@ -15,23 +15,21 @@ const app = initializeApp(firebaseConfig);
 const db_fire = getFirestore(app);
 const auth = getAuth(app);
 
-let userLogado = null, db = { clientes: [], vendas: [] }, filtro = 'todos', vendaIdAtual = null;
+let userLogado = null, db = { clientes: [], vendas: [] }, filtro = 'todos', vendaIdAtual = null, clienteIdAtual = null;
 let isLoginMode = true, clienteSelecionado = null;
 
-// --- TELEMETRIA SILENCIOSA (MONITORAMENTO DO DEV) ---
+// --- TELEMETRIA SILENCIOSA ---
 async function trackUsage(evento, detalhes = {}) {
     if (!userLogado) return;
     try {
         await addDoc(collection(db_fire, "telemetria_uso"), {
-            userId: userLogado.uid, // Campo obrigatório pela sua regra
+            userId: userLogado.uid,
             u: userLogado.email,
             e: evento,
             d: detalhes,
             t: new Date().toISOString()
         });
-    } catch (e) { 
-        console.error("Erro na telemetria:", e); 
-    }
+    } catch (e) { console.error("Erro na telemetria:", e); }
 }
 
 // --- AUTH ---
@@ -82,34 +80,36 @@ window.navegarFab = (id) => { window.navegar(id); document.getElementById('fab-m
 const inputBusca = document.getElementById('busca-cliente');
 const boxSugestoes = document.getElementById('sugestoes-cliente');
 
-inputBusca.oninput = () => {
-    const termo = inputBusca.value.toLowerCase();
-    boxSugestoes.innerHTML = "";
-    clienteSelecionado = null;
-    if (termo.length < 1) { boxSugestoes.style.display = "none"; return; }
-    
-    const filtrados = db.clientes.filter(c => c.nome.toLowerCase().includes(termo));
-    if (filtrados.length > 0) {
-        boxSugestoes.style.display = "block";
-        filtrados.forEach(c => {
-            const div = document.createElement('div');
-            div.className = "sugestao-item";
-            div.innerText = c.nome;
-            div.onclick = () => {
-                inputBusca.value = c.nome;
-                clienteSelecionado = c;
-                boxSugestoes.style.display = "none";
-                trackUsage("selecionou_cliente_busca");
-            };
-            boxSugestoes.appendChild(div);
-        });
-    } else { boxSugestoes.style.display = "none"; }
-};
+if(inputBusca) {
+    inputBusca.oninput = () => {
+        const termo = inputBusca.value.toLowerCase();
+        boxSugestoes.innerHTML = "";
+        clienteSelecionado = null;
+        if (termo.length < 1) { boxSugestoes.style.display = "none"; return; }
+        
+        const filtrados = db.clientes.filter(c => c.nome.toLowerCase().includes(termo));
+        if (filtrados.length > 0) {
+            boxSugestoes.style.display = "block";
+            filtrados.forEach(c => {
+                const div = document.createElement('div');
+                div.className = "sugestao-item";
+                div.innerText = c.nome;
+                div.onclick = () => {
+                    inputBusca.value = c.nome;
+                    clienteSelecionado = c;
+                    boxSugestoes.style.display = "none";
+                };
+                boxSugestoes.appendChild(div);
+            });
+        } else { boxSugestoes.style.display = "none"; }
+    };
+}
 
 // --- SYNC ---
 function startSync(uid) {
     onSnapshot(query(collection(db_fire, "clientes"), where("userId", "==", uid)), s => {
         db.clientes = s.docs.map(d => ({id: d.id, ...d.data()}));
+        renderTabelaClientes();
     });
     onSnapshot(query(collection(db_fire, "vendas"), where("userId", "==", uid)), s => {
         db.vendas = s.docs.map(d => ({id: d.id, ...d.data()}));
@@ -129,7 +129,6 @@ document.getElementById('form-cliente').onsubmit = async (e) => {
         tel: document.getElementById('tel-cliente').value.replace(/\D/g, ''),
         userId: userLogado.uid
     });
-    trackUsage("cadastro_cliente_sucesso");
     e.target.reset(); alert("Cliente Salvo!");
 };
 
@@ -149,8 +148,49 @@ document.getElementById('form-venda').onsubmit = async (e) => {
             vencimento: d.toISOString().split('T')[0], pago: false, userId: userLogado.uid
         });
     }
-    trackUsage("venda_criada", { parcelas });
     e.target.reset(); inputBusca.value = ""; clienteSelecionado = null; window.navegar('historico');
+};
+
+// --- GESTÃO DE CLIENTES ---
+function renderTabelaClientes() {
+    const container = document.getElementById('tabela-clientes');
+    if(!container) return;
+    container.innerHTML = "";
+    db.clientes.sort((a,b) => a.nome.localeCompare(b.nome)).forEach(c => {
+        container.innerHTML += `
+            <div class="item-venda">
+                <div class="item-info">
+                    <strong class="venda-nome">${c.nome}</strong>
+                    <small class="venda-desc"><i class="fab fa-whatsapp"></i> ${c.tel}</small>
+                </div>
+                <div class="item-actions">
+                    <button onclick="window.abrirEdicaoCliente('${c.id}')" class="btn-op btn-edit"><i class="fas fa-user-pen"></i></button>
+                </div>
+            </div>`;
+    });
+}
+
+window.abrirEdicaoCliente = (id) => {
+    clienteIdAtual = id;
+    const c = db.clientes.find(x => x.id === id);
+    document.getElementById('edit-cliente-nome').value = c.nome;
+    document.getElementById('edit-cliente-tel').value = c.tel;
+    document.getElementById('modal-edit-cliente').style.display = 'flex';
+};
+
+window.salvarEdicaoCliente = async () => {
+    await updateDoc(doc(db_fire, "clientes", clienteIdAtual), { 
+        nome: document.getElementById('edit-cliente-nome').value, 
+        tel: document.getElementById('edit-cliente-tel').value.replace(/\D/g, '')
+    });
+    window.fecharModal('modal-edit-cliente');
+};
+
+window.apagarCliente = async () => {
+    if(confirm("Deseja excluir este cliente?")) { 
+        await deleteDoc(doc(db_fire, "clientes", clienteIdAtual)); 
+        window.fecharModal('modal-edit-cliente'); 
+    }
 };
 
 // --- HISTÓRICO ---
@@ -185,11 +225,8 @@ function renderHistorico() {
     });
 }
 
-// --- AÇÕES ---
-window.quitar = (id) => {
-    updateDoc(doc(db_fire, "vendas", id), {pago: true});
-    trackUsage("quitar_venda");
-}
+// --- AÇÕES VENDAS ---
+window.quitar = (id) => updateDoc(doc(db_fire, "vendas", id), {pago: true});
 window.abrirLembrete = (id) => {
     vendaIdAtual = id; const v = db.vendas.find(x => x.id === id);
     document.getElementById('msg-whatsapp').value = `Olá ${v.nome}, lembrete de cobrança: R$ ${v.valor.toFixed(2)} (${v.desc}).`;
@@ -198,7 +235,6 @@ window.abrirLembrete = (id) => {
 window.enviarWpp = () => {
     const v = db.vendas.find(x => x.id === vendaIdAtual);
     const msg = encodeURIComponent(document.getElementById('msg-whatsapp').value);
-    trackUsage("enviou_whatsapp");
     window.open(`https://wa.me/55${v.tel}?text=${msg}`, '_blank');
 };
 window.abrirEdicao = (id) => {
@@ -228,8 +264,11 @@ window.mudarFiltro = (f, b) => {
     renderHistorico(); 
 };
 
-// Formatação de valor em tempo real
-document.getElementById('valor-venda').oninput = (e) => {
-    let v = e.target.value.replace(/\D/g,'');
-    e.target.value = (v/100).toFixed(2).replace(".",",");
-};
+// Formatação de valor
+const inputValor = document.getElementById('valor-venda');
+if(inputValor) {
+    inputValor.oninput = (e) => {
+        let v = e.target.value.replace(/\D/g,'');
+        e.target.value = (v/100).toFixed(2).replace(".",",");
+    };
+}
