@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyD3bR5q-Lho80p_XAIhsZtolrM8K0-l7EM",
@@ -33,29 +33,137 @@ async function trackUsage(evento, detalhes = {}) {
 }
 
 // --- AUTH ---
+window.setAuthMode = (modo, e) => {
+    if(e) e.preventDefault();
+    isLoginMode = modo === 'login';
+    document.getElementById('form-login').style.display = isLoginMode ? 'block' : 'none';
+    document.getElementById('form-cadastro').style.display = isLoginMode ? 'none' : 'block';
+    document.getElementById('form-verificacao').style.display = 'none';
+    document.getElementById('tab-login').classList.toggle('active', isLoginMode);
+    document.getElementById('tab-cadastro').classList.toggle('active', !isLoginMode);
+    document.querySelector('.auth-tabs').style.display = 'flex';
+    if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; }
+};
+
 window.toggleAuthMode = (e) => {
     if(e) e.preventDefault();
-    isLoginMode = !isLoginMode;
-    document.getElementById('auth-title').innerText = isLoginMode ? "Entrar" : "Criar Conta";
-    document.getElementById('btn-auth').innerText = isLoginMode ? "Entrar" : "Cadastrar";
+    window.setAuthMode(isLoginMode ? 'cadastro' : 'login', null);
 };
 
-window.fazerAuth = async () => {
-    const e = document.getElementById('auth-email').value, s = document.getElementById('auth-senha').value;
-    try {
-        if(isLoginMode) await signInWithEmailAndPassword(auth, e, s);
-        else await createUserWithEmailAndPassword(auth, e, s);
-        trackUsage(isLoginMode ? "login" : "cadastro");
-    } catch (err) { alert("Dados inválidos."); }
+window.toggleSenhaVis = (inputId, btn) => {
+    const inp = document.getElementById(inputId);
+    const visible = inp.type === 'text';
+    inp.type = visible ? 'password' : 'text';
+    btn.querySelector('i').className = visible ? 'fas fa-eye' : 'fas fa-eye-slash';
 };
+
+window.fazerLogin = async () => {
+    const email = document.getElementById('login-email').value;
+    const senha = document.getElementById('login-senha').value;
+    try {
+        const cred = await signInWithEmailAndPassword(auth, email, senha);
+        trackUsage('login');
+        // Login de conta existente: acesso direto, sem exigir verificação
+        userLogado = cred.user;
+        document.body.classList.remove('not-logged-in');
+        startSync(cred.user.uid);
+        window.navegar('home');
+    } catch (err) { alert('E-mail ou senha incorretos.'); }
+};
+
+window.fazerCadastro = async () => {
+    const nome = document.getElementById('cad-nome').value.trim();
+    const tel = document.getElementById('cad-tel').value.replace(/\D/g,'');
+    const estabelecimento = document.getElementById('cad-estabelecimento').value.trim();
+    const rua = document.getElementById('cad-rua').value.trim();
+    const bairro = document.getElementById('cad-bairro').value.trim();
+    const email = document.getElementById('cad-email').value.trim();
+    const senha = document.getElementById('cad-senha').value;
+    const confirma = document.getElementById('cad-senha-confirm').value;
+    const erroDiv = document.getElementById('cad-erro');
+
+    erroDiv.style.display = 'none';
+    if (!nome)           { erroDiv.textContent = 'Informe seu nome completo.'; erroDiv.style.display = 'block'; return; }
+    if (!tel)            { erroDiv.textContent = 'Informe seu WhatsApp/telefone.'; erroDiv.style.display = 'block'; return; }
+    if (!estabelecimento){ erroDiv.textContent = 'Informe o nome do estabelecimento.'; erroDiv.style.display = 'block'; return; }
+    if (!rua)            { erroDiv.textContent = 'Informe a rua e número.'; erroDiv.style.display = 'block'; return; }
+    if (!bairro)         { erroDiv.textContent = 'Informe o bairro.'; erroDiv.style.display = 'block'; return; }
+    if (!email)          { erroDiv.textContent = 'Informe um e-mail válido.'; erroDiv.style.display = 'block'; return; }
+    if (senha.length < 6){ erroDiv.textContent = 'A senha deve ter pelo menos 6 caracteres.'; erroDiv.style.display = 'block'; return; }
+    if (senha !== confirma){ erroDiv.textContent = 'As senhas não coincidem.'; erroDiv.style.display = 'block'; return; }
+
+    try {
+        const cred = await createUserWithEmailAndPassword(auth, email, senha);
+        await sendEmailVerification(cred.user);
+        await addDoc(collection(db_fire, 'perfis'), {
+            userId: cred.user.uid, nome, tel, estabelecimento,
+            endereco: { rua, bairro },
+            email, criadoEm: new Date().toISOString()
+        });
+        trackUsage('cadastro', { nome, estabelecimento });
+
+        // Mostra tela de verificação
+        document.getElementById('verif-email-label').textContent = email;
+        mostrarVerificacao();
+        iniciarPollingVerificacao();
+    } catch (err) {
+        erroDiv.textContent = err.code === 'auth/email-already-in-use' ? 'Este e-mail já está cadastrado.' : 'Erro ao criar conta. Tente novamente.';
+        erroDiv.style.display = 'block';
+    }
+};
+
+// --- VERIFICAÇÃO DE E-MAIL ---
+let pollingInterval = null;
+
+function mostrarVerificacao() {
+    document.getElementById('form-login').style.display = 'none';
+    document.getElementById('form-cadastro').style.display = 'none';
+    document.getElementById('form-verificacao').style.display = 'block';
+    document.querySelector('.auth-tabs').style.display = 'none';
+}
+
+function iniciarPollingVerificacao() {
+    if (pollingInterval) clearInterval(pollingInterval);
+    pollingInterval = setInterval(async () => {
+        const user = auth.currentUser;
+        if (!user) { clearInterval(pollingInterval); return; }
+        await user.reload();
+        if (user.emailVerified) {
+            clearInterval(pollingInterval);
+            document.querySelector('.auth-tabs').style.display = 'flex';
+            // onAuthStateChanged vai assumir a partir daqui
+        }
+    }, 3000);
+}
+
+window.reenviarVerificacao = async () => {
+    const user = auth.currentUser;
+    if (user) {
+        await sendEmailVerification(user);
+        alert('E-mail reenviado! Verifique sua caixa de entrada.');
+    }
+};
+
+window.cancelarVerificacao = async () => {
+    if (pollingInterval) clearInterval(pollingInterval);
+    await signOut(auth);
+    document.querySelector('.auth-tabs').style.display = 'flex';
+    window.setAuthMode('cadastro', null);
+};
+
+window.fazerAuth = async () => { window.fazerLogin(); };
 
 onAuthStateChanged(auth, user => {
-    if(user) { 
-        userLogado = user; 
-        document.body.classList.remove('not-logged-in'); 
-        startSync(user.uid); 
-        window.navegar('home'); 
-    } else { document.body.classList.add('not-logged-in'); }
+    if(user) {
+        // Se o polling de verificação está ativo, significa que é um cadastro novo aguardando confirmação
+        if (pollingInterval) return;
+        userLogado = user;
+        document.body.classList.remove('not-logged-in');
+        startSync(user.uid);
+        window.navegar('home');
+    } else {
+        document.body.classList.add('not-logged-in');
+    }
 });
 
 window.fazerLogout = () => {

@@ -12,16 +12,158 @@
 
     <!-- Tela de Login/Cadastro -->
     <div id="auth-container">
-        <div class="auth-card">
-            <div class="auth-icon"><i class="fas fa-rocket"></i></div>
-            <h2 id="auth-title">Entrar</h2>
-            <div class="auth-form">
-                <input type="email" id="auth-email" placeholder="E-mail">
-                <input type="password" id="auth-senha" placeholder="Senha">
-                <button onclick="window.fazerAuth()" class="btn-primary" id="btn-auth">Entrar</button>
+        <div class="auth-wrapper">
+            <!-- Painel lateral decorativo -->
+            <div class="auth-panel">
+                <div class="auth-panel-inner">
+                    <div class="auth-brand">
+                        <i class="fas fa-robot"></i>
+                        <span>FiadoFácil</span>
+                    </div>
+                    <h1 class="auth-panel-title">Controle seu fiado com facilidade</h1>
+                    <p class="auth-panel-sub">Gerencie clientes, cobranças e recebimentos em um só lugar.</p>
+                    <ul class="auth-features">
+                        <li><i class="fas fa-check-circle"></i> Cadastro de clientes ilimitado</li>
+                        <li><i class="fas fa-check-circle"></i> Lembretes via WhatsApp</li>
+                        <li><i class="fas fa-check-circle"></i> Histórico de cobranças</li>
+                        <li><i class="fas fa-check-circle"></i> Dashboard em tempo real</li>
+                    </ul>
+                </div>
             </div>
-            <div class="auth-footer">
-                <a href="#" onclick="window.toggleAuthMode(event)">Mudar modo de acesso</a>
+
+            <!-- Formulário -->
+            <div class="auth-form-panel">
+                <!-- TAB SWITCHER -->
+                <div class="auth-tabs">
+                    <button class="auth-tab active" id="tab-login" onclick="window.setAuthMode('login', event)">Entrar</button>
+                    <button class="auth-tab" id="tab-cadastro" onclick="window.setAuthMode('cadastro', event)">Criar Conta</button>
+                </div>
+
+                <!-- LOGIN -->
+                <div id="form-login" class="auth-form-block">
+                    <div class="auth-form-header">
+                        <h2>Bem-vindo de volta!</h2>
+                        <p>Faça login para acessar sua conta</p>
+                    </div>
+                    <div class="auth-fields">
+                        <div class="auth-field-group">
+                            <label>E-mail</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-envelope"></i>
+                                <input type="email" id="login-email" placeholder="seu@email.com">
+                            </div>
+                        </div>
+                        <div class="auth-field-group">
+                            <label>Senha</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-lock"></i>
+                                <input type="password" id="login-senha" placeholder="Sua senha">
+                                <button type="button" class="toggle-senha" onclick="window.toggleSenhaVis('login-senha', this)"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                        <button onclick="window.fazerLogin()" class="btn-auth-submit">
+                            <span>Entrar</span> <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    <p class="auth-switch-hint">Não tem conta? <a href="#" onclick="window.setAuthMode('cadastro', event)">Cadastre-se grátis</a></p>
+                </div>
+
+                <!-- CADASTRO -->
+                <div id="form-cadastro" class="auth-form-block" style="display:none;">
+                    <div class="auth-form-header">
+                        <h2>Crie sua conta</h2>
+                        <p>Grátis, sem cartão de crédito</p>
+                    </div>
+                    <div class="cad-grid">
+                        <div class="auth-field-group cad-full">
+                            <label>Nome completo</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-user"></i>
+                                <input type="text" id="cad-nome" placeholder="Seu nome">
+                            </div>
+                        </div>
+                        <div class="auth-field-group">
+                            <label>WhatsApp (com DDD)</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-phone"></i>
+                                <input type="tel" id="cad-tel" placeholder="11999999999">
+                            </div>
+                        </div>
+                        <div class="auth-field-group">
+                            <label>Estabelecimento</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-store"></i>
+                                <input type="text" id="cad-estabelecimento" placeholder="Mercearia do João">
+                            </div>
+                        </div>
+                        <div class="auth-field-group">
+                            <label>Rua e número</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <input type="text" id="cad-rua" placeholder="Rua das Flores, 123">
+                            </div>
+                        </div>
+                        <div class="auth-field-group">
+                            <label>Bairro</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-map"></i>
+                                <input type="text" id="cad-bairro" placeholder="Centro">
+                            </div>
+                        </div>
+                        <div class="auth-field-group cad-full">
+                            <label>E-mail</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-envelope"></i>
+                                <input type="email" id="cad-email" placeholder="seu@email.com">
+                            </div>
+                        </div>
+                        <div class="auth-field-group">
+                            <label>Senha</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-lock"></i>
+                                <input type="password" id="cad-senha" placeholder="Mín. 6 caracteres">
+                                <button type="button" class="toggle-senha" onclick="window.toggleSenhaVis('cad-senha', this)"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                        <div class="auth-field-group">
+                            <label>Confirmar senha</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-lock"></i>
+                                <input type="password" id="cad-senha-confirm" placeholder="Repita a senha">
+                                <button type="button" class="toggle-senha" onclick="window.toggleSenhaVis('cad-senha-confirm', this)"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                        <div id="cad-erro" class="auth-erro cad-full" style="display:none;"></div>
+                        <button onclick="window.fazerCadastro()" class="btn-auth-submit cad-full">
+                            <span>Criar conta grátis</span> <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    <p class="auth-switch-hint">Já tem conta? <a href="#" onclick="window.setAuthMode('login', event)">Faça login</a></p>
+                </div>
+
+                <!-- VERIFICAÇÃO DE E-MAIL -->
+                <div id="form-verificacao" class="auth-form-block" style="display:none;">
+                    <div class="verificacao-box">
+                        <div class="verif-icon-wrap">
+                            <i class="fas fa-envelope-open-text"></i>
+                        </div>
+                        <h2>Verifique seu e-mail</h2>
+                        <p>Enviamos um link de confirmação para:</p>
+                        <strong id="verif-email-label" class="verif-email">—</strong>
+                        <p class="verif-instrucao">Abra o e-mail e clique no link para ativar sua conta. Esta tela será atualizada automaticamente.</p>
+                        <div class="verif-loader">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <div class="verif-acoes">
+                            <button onclick="window.reenviarVerificacao()" class="btn-verif-resend">
+                                <i class="fas fa-paper-plane"></i> Reenviar e-mail
+                            </button>
+                            <button onclick="window.cancelarVerificacao()" class="btn-verif-cancel">
+                                Usar outro e-mail
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
