@@ -177,6 +177,7 @@
                 <button onclick="window.navegar('cliente')"><i class="fas fa-user-plus"></i> <span class="nav-text">Clientes</span></button>
                 <button onclick="window.navegar('venda')"><i class="fas fa-cart-plus"></i> <span class="nav-text">Nova Venda</span></button>
                 <button onclick="window.navegar('historico')"><i class="fas fa-receipt"></i> <span class="nav-text">Cobranças</span></button>
+                <button id="btn-admin-nav" onclick="window.navegar('admin')" style="display:none;"><i class="fas fa-chart-line"></i> <span class="nav-text">Admin</span></button>
                 <button onclick="window.fazerLogout()" class="logout-btn"><i class="fas fa-power-off"></i> <span class="nav-text">Sair</span></button>
             </nav>
         </aside>
@@ -207,6 +208,35 @@
                         <h2 id="total-pago">R$ 0,00</h2>
                     </div>
                 </div>
+
+                <!-- Card de Perfil -->
+                <div class="perfil-card" id="perfil-card">
+                    <div class="perfil-avatar" id="perfil-avatar">?</div>
+                    <div class="perfil-info">
+                        <h3 id="perfil-nome">—</h3>
+                        <span class="perfil-estabelecimento" id="perfil-estab">—</span>
+                        <div class="perfil-detalhes">
+                            <span id="perfil-tel"><i class="fas fa-phone"></i> —</span>
+                            <span id="perfil-end"><i class="fas fa-map-marker-alt"></i> —</span>
+                        </div>
+                    </div>
+                    <button class="btn-perfil-edit" onclick="window.abrirEditarPerfil()">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Tela Admin -->
+            <section id="tela-admin" class="tela">
+                <h2 style="margin-bottom:20px; color:var(--dark);">Painel Admin</h2>
+                <div class="admin-totais" id="admin-totais">
+                    <div class="admin-stat"><i class="fas fa-right-to-bracket"></i><span id="adm-logins">—</span><small>Logins</small></div>
+                    <div class="admin-stat"><i class="fas fa-user-plus"></i><span id="adm-cadastros">—</span><small>Cadastros</small></div>
+                    <div class="admin-stat"><i class="fas fa-users"></i><span id="adm-usuarios">—</span><small>Usuários únicos</small></div>
+                    <div class="admin-stat"><i class="fas fa-calendar-check"></i><span id="adm-dias-ativos">—</span><small>Dias com uso</small></div>
+                </div>
+                <h3 style="margin: 24px 0 12px; font-size:0.95rem; color:var(--text-muted);">Últimos 30 dias</h3>
+                <div id="admin-calendario" class="admin-calendario"></div>
             </section>
 
             <!-- Cadastro Cliente -->
@@ -318,6 +348,20 @@
             <button onclick="window.enviarWpp()" class="btn-primary" style="background:#25d366; margin-top: 10px;">
                 <i class="fab fa-whatsapp"></i> Abrir WhatsApp
             </button>
+        </div>
+    </div>
+
+    <!-- Modal Editar Perfil -->
+    <div id="modal-perfil" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="window.fecharModal('modal-perfil')">&times;</span>
+            <h3>Editar Perfil</h3>
+            <label>Nome completo</label><input type="text" id="perf-nome">
+            <label>WhatsApp (com DDD)</label><input type="tel" id="perf-tel">
+            <label>Estabelecimento</label><input type="text" id="perf-estab">
+            <label>Rua e número</label><input type="text" id="perf-rua">
+            <label>Bairro</label><input type="text" id="perf-bairro">
+            <button onclick="window.salvarPerfil()" class="btn-primary" style="margin-top:16px;">Salvar Alterações</button>
         </div>
     </div>
 

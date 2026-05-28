@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -178,6 +178,7 @@ window.navegar = (id) => {
     if(tela) {
         tela.style.display = 'flex';
         trackUsage("navegou", { tela: id });
+        if (id === 'admin') carregarAdmin();
     }
 };
 
@@ -213,8 +214,128 @@ if(inputBusca) {
     };
 }
 
+// =============================================
+// ADMIN — troque pelo seu e-mail real
+const ADMIN_EMAIL = "viniciusneiva125@gmail.com";
+// =============================================
+
+// --- PERFIL ---
+let perfilDocId = null;
+let perfilCache = {};
+
+function renderPerfil(p) {
+    const inicial = (p.nome || userLogado.email || '?')[0].toUpperCase();
+    document.getElementById('perfil-avatar').textContent = inicial;
+    document.getElementById('perfil-nome').textContent = p.nome || userLogado.email || '—';
+    document.getElementById('perfil-estab').textContent = p.estabelecimento || '—';
+    document.getElementById('perfil-tel').innerHTML = `<i class="fas fa-phone"></i> ${p.tel || '—'}`;
+    const end = p.endereco ? `${p.endereco.rua || ''}${p.endereco.bairro ? ', ' + p.endereco.bairro : ''}` : '—';
+    document.getElementById('perfil-end').innerHTML = `<i class="fas fa-map-marker-alt"></i> ${end || '—'}`;
+}
+
+async function carregarPerfil(uid) {
+    const snap = await getDocs(query(collection(db_fire, 'perfis'), where('userId', '==', uid)));
+    if (!snap.empty) {
+        const d = snap.docs[0];
+        perfilDocId = d.id;
+        perfilCache = d.data();
+    } else {
+        // Usuário sem perfil ainda (conta antiga) — cria documento vazio
+        const ref = await addDoc(collection(db_fire, 'perfis'), {
+            userId: uid,
+            email: userLogado.email,
+            nome: '',
+            tel: '',
+            estabelecimento: '',
+            endereco: { rua: '', bairro: '' },
+            criadoEm: new Date().toISOString()
+        });
+        perfilDocId = ref.id;
+        perfilCache = {};
+    }
+    renderPerfil(perfilCache);
+}
+
+window.abrirEditarPerfil = () => {
+    // Usa dados já em memória — sem segundo getDocs
+    document.getElementById('perf-nome').value = perfilCache.nome || '';
+    document.getElementById('perf-tel').value = perfilCache.tel || '';
+    document.getElementById('perf-estab').value = perfilCache.estabelecimento || '';
+    document.getElementById('perf-rua').value = perfilCache.endereco?.rua || '';
+    document.getElementById('perf-bairro').value = perfilCache.endereco?.bairro || '';
+    document.getElementById('modal-perfil').style.display = 'flex';
+};
+
+window.salvarPerfil = async () => {
+    if (!perfilDocId) { alert('Perfil não carregado ainda. Tente novamente.'); return; }
+    const dados = {
+        nome: document.getElementById('perf-nome').value.trim(),
+        tel: document.getElementById('perf-tel').value.replace(/\D/g,''),
+        estabelecimento: document.getElementById('perf-estab').value.trim(),
+        endereco: {
+            rua: document.getElementById('perf-rua').value.trim(),
+            bairro: document.getElementById('perf-bairro').value.trim()
+        }
+    };
+    await updateDoc(doc(db_fire, 'perfis', perfilDocId), dados);
+    perfilCache = { ...perfilCache, ...dados };
+    renderPerfil(perfilCache);
+    window.fecharModal('modal-perfil');
+};
+
+// --- ADMIN ---
+async function carregarAdmin() {
+    const snap = await getDocs(collection(db_fire, 'telemetria_uso'));
+    const eventos = snap.docs.map(d => d.data());
+
+    const logins    = eventos.filter(e => e.e === 'login').length;
+    const cadastros = eventos.filter(e => e.e === 'cadastro').length;
+    const usuarios  = new Set(eventos.map(e => e.userId)).size;
+
+    // Dias únicos com uso nos últimos 30 dias
+    const hoje = new Date();
+    const diasMap = {};
+    for (let i = 29; i >= 0; i--) {
+        const d = new Date(hoje);
+        d.setDate(hoje.getDate() - i);
+        const key = d.toISOString().split('T')[0];
+        diasMap[key] = false;
+    }
+    eventos.forEach(e => {
+        const dia = (e.t || '').split('T')[0];
+        if (dia in diasMap) diasMap[dia] = true;
+    });
+
+    const diasAtivos = Object.values(diasMap).filter(Boolean).length;
+
+    document.getElementById('adm-logins').textContent = logins;
+    document.getElementById('adm-cadastros').textContent = cadastros;
+    document.getElementById('adm-usuarios').textContent = usuarios;
+    document.getElementById('adm-dias-ativos').textContent = diasAtivos;
+
+    // Renderiza calendário
+    const cal = document.getElementById('admin-calendario');
+    cal.innerHTML = '';
+    Object.entries(diasMap).forEach(([dia, usado]) => {
+        const [,m,d] = dia.split('-');
+        const el = document.createElement('div');
+        el.className = 'cal-dia ' + (usado ? 'cal-ativo' : 'cal-inativo');
+        el.innerHTML = `<span class="cal-num">${parseInt(d)}</span><span class="cal-mes">${m}/${dia.split('-')[0].slice(2)}</span>`;
+        el.title = dia + (usado ? ' — usado' : ' — sem uso');
+        cal.appendChild(el);
+    });
+}
+
 // --- SYNC ---
 function startSync(uid) {
+    // Perfil
+    carregarPerfil(uid);
+
+    // Botão admin
+    if (userLogado.email === ADMIN_EMAIL) {
+        document.getElementById('btn-admin-nav').style.display = 'flex';
+    }
+
     onSnapshot(query(collection(db_fire, "clientes"), where("userId", "==", uid)), s => {
         db.clientes = s.docs.map(d => ({id: d.id, ...d.data()}));
         renderTabelaClientes();
