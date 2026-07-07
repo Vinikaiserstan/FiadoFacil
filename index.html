@@ -170,7 +170,9 @@
 
     <div class="app-container">
         <!-- Sidebar para Desktop -->
-        <aside class="sidebar">
+        <button class="sidebar-toggle" id="sidebar-toggle" onclick="window.toggleSidebar()"><i class="fas fa-bars"></i></button>
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
+        <aside class="sidebar" id="sidebar">
             <div class="logo-area"><i class="fas fa-robot"></i> <span class="nav-text">FiadoFácil</span></div>
             <nav>
                 <button onclick="window.navegar('home')"><i class="fas fa-home"></i> <span class="nav-text">Home</span></button>
@@ -184,7 +186,7 @@
 
         <!-- FAB para Mobile -->
         <div class="fab-container" id="fab-menu">
-            <div class="fab-options">
+            <div class="fab-options" id="fab-options">
                 <button onclick="window.navegarFab('historico')"><i class="fas fa-receipt"></i></button>
                 <button onclick="window.navegarFab('venda')"><i class="fas fa-cart-plus"></i></button>
                 <button onclick="window.navegarFab('cliente')"><i class="fas fa-user-plus"></i></button>
@@ -209,20 +211,57 @@
                     </div>
                 </div>
 
-                <!-- Card de Perfil -->
-                <div class="perfil-card" id="perfil-card">
-                    <div class="perfil-avatar" id="perfil-avatar">?</div>
-                    <div class="perfil-info">
-                        <h3 id="perfil-nome">—</h3>
-                        <span class="perfil-estabelecimento" id="perfil-estab">—</span>
-                        <div class="perfil-detalhes">
-                            <span id="perfil-tel"><i class="fas fa-phone"></i> —</span>
-                            <span id="perfil-end"><i class="fas fa-map-marker-alt"></i> —</span>
+                <!-- Card de Perfil Expandido -->
+                <div class="perfil-card-full" id="perfil-card">
+                    <div class="perfil-capa"></div>
+                    <div class="perfil-body">
+                        <div class="perfil-avatar-wrap">
+                            <div class="perfil-avatar-lg" id="perfil-avatar">?</div>
+                            <label class="perfil-foto-btn" title="Trocar foto" id="perfil-foto-label">
+                                <i class="fas fa-camera"></i>
+                                <input type="file" id="perfil-foto-input" accept="image/*" style="display:none" onchange="window.uploadFotoPerfil(this)">
+                            </label>
+                        </div>
+                        <div class="perfil-main-info">
+                            <div class="perfil-nome-linha">
+                                <h2 id="perfil-nome">—</h2>
+                                <button class="btn-perfil-edit" onclick="window.abrirEditarPerfil()">
+                                    <i class="fas fa-pen"></i> Editar perfil
+                                </button>
+                            </div>
+                            <span class="perfil-estabelecimento" id="perfil-estab">—</span>
+                        </div>
+                        <div class="perfil-dados-grid">
+                            <div class="perfil-dado">
+                                <i class="fas fa-phone"></i>
+                                <div>
+                                    <small>WhatsApp</small>
+                                    <span id="perfil-tel">—</span>
+                                </div>
+                            </div>
+                            <div class="perfil-dado">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <div>
+                                    <small>Endereço</small>
+                                    <span id="perfil-end">—</span>
+                                </div>
+                            </div>
+                            <div class="perfil-dado">
+                                <i class="fas fa-envelope"></i>
+                                <div>
+                                    <small>E-mail</small>
+                                    <span id="perfil-email">—</span>
+                                </div>
+                            </div>
+                            <div class="perfil-dado">
+                                <i class="fas fa-calendar"></i>
+                                <div>
+                                    <small>Membro desde</small>
+                                    <span id="perfil-desde">—</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <button class="btn-perfil-edit" onclick="window.abrirEditarPerfil()">
-                        <i class="fas fa-pen"></i>
-                    </button>
                 </div>
             </section>
 
@@ -235,6 +274,8 @@
                     <div class="admin-stat"><i class="fas fa-users"></i><span id="adm-usuarios">—</span><small>Usuários únicos</small></div>
                     <div class="admin-stat"><i class="fas fa-calendar-check"></i><span id="adm-dias-ativos">—</span><small>Dias com uso</small></div>
                 </div>
+                <h3 style="margin: 24px 0 12px; font-size:0.95rem; color:var(--text-muted);">Detalhamento de ações</h3>
+                <div id="admin-detalhes" class="admin-detalhes"></div>
                 <h3 style="margin: 24px 0 12px; font-size:0.95rem; color:var(--text-muted);">Últimos 30 dias</h3>
                 <div id="admin-calendario" class="admin-calendario"></div>
             </section>
@@ -356,13 +397,26 @@
         <div class="modal-content">
             <span class="close-modal" onclick="window.fecharModal('modal-perfil')">&times;</span>
             <h3>Editar Perfil</h3>
-            <label>Nome completo</label><input type="text" id="perf-nome">
-            <label>WhatsApp (com DDD)</label><input type="tel" id="perf-tel">
+            <div class="form-row">
+                <div class="col"><label>Nome completo</label><input type="text" id="perf-nome"></div>
+                <div class="col"><label>WhatsApp (com DDD)</label><input type="tel" id="perf-tel"></div>
+            </div>
             <label>Estabelecimento</label><input type="text" id="perf-estab">
-            <label>Rua e número</label><input type="text" id="perf-rua">
-            <label>Bairro</label><input type="text" id="perf-bairro">
+            <div class="form-row">
+                <div class="col"><label>Rua e número</label><input type="text" id="perf-rua"></div>
+                <div class="col"><label>Bairro</label><input type="text" id="perf-bairro"></div>
+            </div>
             <button onclick="window.salvarPerfil()" class="btn-primary" style="margin-top:16px;">Salvar Alterações</button>
         </div>
+    </div>
+
+    <!-- Banner LGPD -->
+    <div id="banner-lgpd" class="banner-lgpd" style="display:none;">
+        <div class="banner-lgpd-inner">
+            <i class="fas fa-shield-halved"></i>
+            <p>O FiadoFácil registra suas ações dentro do sistema (como cadastros e cobranças) para fins de melhoria da plataforma. Nenhum dado pessoal de seus clientes é coletado nesse processo. <a href="#" onclick="window.fecharBannerLgpd(event)">Entendi</a></p>
+        </div>
+        <button onclick="window.fecharBannerLgpd(event)" class="banner-lgpd-close"><i class="fas fa-times"></i></button>
     </div>
 
     <script type="module" src="script.js"></script>

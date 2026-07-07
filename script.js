@@ -1,4 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -14,22 +15,35 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db_fire = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
 
 let userLogado = null, db = { clientes: [], vendas: [] }, filtro = 'todos', vendaIdAtual = null, clienteIdAtual = null;
 let isLoginMode = true, clienteSelecionado = null;
 
-// --- TELEMETRIA SILENCIOSA ---
+// --- LOG DE AÇÕES (LGPD-safe: sem dados pessoais de terceiros) ---
+// Registra apenas tipo de ação, tela e timestamp. Nunca nomes, valores ou telefones de clientes.
 async function trackUsage(evento, detalhes = {}) {
     if (!userLogado) return;
     try {
         await addDoc(collection(db_fire, "telemetria_uso"), {
             userId: userLogado.uid,
-            u: userLogado.email,
             e: evento,
-            d: detalhes,
             t: new Date().toISOString()
         });
-    } catch (e) { console.error("Erro na telemetria:", e); }
+    } catch (e) { console.error("Erro no log:", e); }
+}
+
+async function log(acao, tela) {
+    if (!userLogado) return;
+    try {
+        await addDoc(collection(db_fire, "log_acoes"), {
+            userId: userLogado.uid,
+            // Apenas tipo de ação e tela — sem dados pessoais de clientes ou valores
+            acao,
+            tela,
+            t: new Date().toISOString()
+        });
+    } catch (e) { console.error("Erro no log:", e); }
 }
 
 // --- AUTH ---
@@ -63,6 +77,7 @@ window.fazerLogin = async () => {
     try {
         const cred = await signInWithEmailAndPassword(auth, email, senha);
         trackUsage('login');
+        log('login', 'auth');
         // Login de conta existente: acesso direto, sem exigir verificação
         userLogado = cred.user;
         document.body.classList.remove('not-logged-in');
@@ -161,6 +176,7 @@ onAuthStateChanged(auth, user => {
         document.body.classList.remove('not-logged-in');
         startSync(user.uid);
         window.navegar('home');
+        mostrarBannerLgpd();
     } else {
         document.body.classList.add('not-logged-in');
     }
@@ -168,8 +184,30 @@ onAuthStateChanged(auth, user => {
 
 window.fazerLogout = () => {
     trackUsage("logout");
+    log('logout', 'app');
     signOut(auth);
 }
+
+// --- BANNER LGPD ---
+window.fecharBannerLgpd = (e) => {
+    if(e) e.preventDefault();
+    document.getElementById('banner-lgpd').style.display = 'none';
+    localStorage.setItem('lgpd_ok', '1');
+};
+
+function mostrarBannerLgpd() {
+    if (!localStorage.getItem('lgpd_ok')) {
+        document.getElementById('banner-lgpd').style.display = 'flex';
+    }
+}
+
+// --- SIDEBAR MOBILE ---
+window.toggleSidebar = () => {
+    const sb = document.getElementById('sidebar');
+    const ov = document.getElementById('sidebar-overlay');
+    const open = sb.classList.toggle('sidebar-open');
+    ov.classList.toggle('active', open);
+};
 
 // --- NAVEGAÇÃO ---
 window.navegar = (id) => {
@@ -179,6 +217,7 @@ window.navegar = (id) => {
         tela.style.display = 'flex';
         trackUsage("navegou", { tela: id });
         if (id === 'admin') carregarAdmin();
+        log('navegou_para_' + id, id);
     }
 };
 
@@ -225,13 +264,40 @@ let perfilCache = {};
 
 function renderPerfil(p) {
     const inicial = (p.nome || userLogado.email || '?')[0].toUpperCase();
-    document.getElementById('perfil-avatar').textContent = inicial;
+    const avatarEl = document.getElementById('perfil-avatar');
+    if (p.fotoURL) {
+        avatarEl.innerHTML = `<img src="${p.fotoURL}" alt="foto" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    } else {
+        avatarEl.textContent = inicial;
+    }
     document.getElementById('perfil-nome').textContent = p.nome || userLogado.email || '—';
     document.getElementById('perfil-estab').textContent = p.estabelecimento || '—';
-    document.getElementById('perfil-tel').innerHTML = `<i class="fas fa-phone"></i> ${p.tel || '—'}`;
-    const end = p.endereco ? `${p.endereco.rua || ''}${p.endereco.bairro ? ', ' + p.endereco.bairro : ''}` : '—';
-    document.getElementById('perfil-end').innerHTML = `<i class="fas fa-map-marker-alt"></i> ${end || '—'}`;
+    document.getElementById('perfil-tel').textContent = p.tel || '—';
+    const end = p.endereco ? [p.endereco.rua, p.endereco.bairro].filter(Boolean).join(', ') : '—';
+    document.getElementById('perfil-end').textContent = end || '—';
+    document.getElementById('perfil-email').textContent = userLogado.email || '—';
+    if (p.criadoEm) {
+        const d = new Date(p.criadoEm);
+        document.getElementById('perfil-desde').textContent = d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+    }
 }
+
+window.uploadFotoPerfil = async (input) => {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { alert('Foto muito grande. Máximo 2MB.'); return; }
+    const label = document.getElementById('perfil-foto-label');
+    label.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    try {
+        const ref = storageRef(storage, `fotos/${userLogado.uid}`);
+        await uploadBytes(ref, file);
+        const url = await getDownloadURL(ref);
+        await updateDoc(doc(db_fire, 'perfis', perfilDocId), { fotoURL: url });
+        perfilCache.fotoURL = url;
+        renderPerfil(perfilCache);
+    } catch(e) { alert('Erro ao enviar foto.'); }
+    label.innerHTML = '<i class="fas fa-camera"></i><input type="file" id="perfil-foto-input" accept="image/*" style="display:none" onchange="window.uploadFotoPerfil(this)">';
+};
 
 async function carregarPerfil(uid) {
     const snap = await getDocs(query(collection(db_fire, 'perfis'), where('userId', '==', uid)));
@@ -285,12 +351,21 @@ window.salvarPerfil = async () => {
 
 // --- ADMIN ---
 async function carregarAdmin() {
-    const snap = await getDocs(collection(db_fire, 'telemetria_uso'));
-    const eventos = snap.docs.map(d => d.data());
+    // Lê telemetria geral (logins/cadastros) e log detalhado de ações
+    const [snapGeral, snapLog] = await Promise.all([
+        getDocs(collection(db_fire, 'telemetria_uso')),
+        getDocs(collection(db_fire, 'log_acoes'))
+    ]);
+    const geral  = snapGeral.docs.map(d => d.data());
+    const acoes  = snapLog.docs.map(d => d.data());
+    const tudo   = [...geral, ...acoes];
 
-    const logins    = eventos.filter(e => e.e === 'login').length;
-    const cadastros = eventos.filter(e => e.e === 'cadastro').length;
-    const usuarios  = new Set(eventos.map(e => e.userId)).size;
+    const logins    = geral.filter(e => e.e === 'login').length;
+    const cadastros = geral.filter(e => e.e === 'cadastro').length;
+    const usuarios  = new Set(tudo.map(e => e.userId).filter(Boolean)).size;
+
+    // Contagem de ações detalhadas do log
+    const count = (acao) => acoes.filter(e => e.acao === acao).length;
 
     // Dias únicos com uso nos últimos 30 dias
     const hoje = new Date();
@@ -298,14 +373,12 @@ async function carregarAdmin() {
     for (let i = 29; i >= 0; i--) {
         const d = new Date(hoje);
         d.setDate(hoje.getDate() - i);
-        const key = d.toISOString().split('T')[0];
-        diasMap[key] = false;
+        diasMap[d.toISOString().split('T')[0]] = false;
     }
-    eventos.forEach(e => {
+    tudo.forEach(e => {
         const dia = (e.t || '').split('T')[0];
         if (dia in diasMap) diasMap[dia] = true;
     });
-
     const diasAtivos = Object.values(diasMap).filter(Boolean).length;
 
     document.getElementById('adm-logins').textContent = logins;
@@ -313,7 +386,29 @@ async function carregarAdmin() {
     document.getElementById('adm-usuarios').textContent = usuarios;
     document.getElementById('adm-dias-ativos').textContent = diasAtivos;
 
-    // Renderiza calendário
+    // Detalhes de ações
+    const detEl = document.getElementById('admin-detalhes');
+    if (detEl) {
+        const acoesList = [
+            { label: 'Novos clientes cadastrados', key: 'novo_cliente' },
+            { label: 'Vendas lançadas',            key: 'nova_venda' },
+            { label: 'Cobranças quitadas',         key: 'quitar_cobranca' },
+            { label: 'Lembretes de cobrança abertos', key: 'abriu_lembrete' },
+            { label: 'Lembretes enviados via WhatsApp', key: 'enviou_lembrete_wpp' },
+            { label: 'Cobranças editadas',         key: 'editou_cobranca' },
+            { label: 'Cobranças excluídas',        key: 'excluiu_cobranca' },
+            { label: 'Clientes editados',          key: 'editou_cliente' },
+            { label: 'Clientes excluídos',         key: 'excluiu_cliente' },
+        ];
+        detEl.innerHTML = acoesList.map(a =>
+            `<div class="adm-detalhe-item">
+                <span class="adm-detalhe-label">${a.label}</span>
+                <span class="adm-detalhe-val">${count(a.key)}</span>
+            </div>`
+        ).join('');
+    }
+
+    // Calendário
     const cal = document.getElementById('admin-calendario');
     cal.innerHTML = '';
     Object.entries(diasMap).forEach(([dia, usado]) => {
@@ -321,7 +416,7 @@ async function carregarAdmin() {
         const el = document.createElement('div');
         el.className = 'cal-dia ' + (usado ? 'cal-ativo' : 'cal-inativo');
         el.innerHTML = `<span class="cal-num">${parseInt(d)}</span><span class="cal-mes">${m}/${dia.split('-')[0].slice(2)}</span>`;
-        el.title = dia + (usado ? ' — usado' : ' — sem uso');
+        el.title = dia + (usado ? ' — com atividade' : ' — sem uso');
         cal.appendChild(el);
     });
 }
@@ -331,9 +426,22 @@ function startSync(uid) {
     // Perfil
     carregarPerfil(uid);
 
-    // Botão admin
+    // Botão admin — sidebar desktop + FAB mobile
     if (userLogado.email === ADMIN_EMAIL) {
         document.getElementById('btn-admin-nav').style.display = 'flex';
+
+        // Injeta botão admin no FAB mobile se ainda não existe
+        if (!document.getElementById('fab-admin-btn')) {
+            const fabOptions = document.getElementById('fab-options');
+            const adminBtn = document.createElement('button');
+            adminBtn.id = 'fab-admin-btn';
+            adminBtn.className = 'fab-admin';
+            adminBtn.innerHTML = '<i class="fas fa-chart-line"></i>';
+            adminBtn.title = 'Painel Admin';
+            adminBtn.onclick = () => window.navegarFab('admin');
+            // Insere no topo das opções (primeiro filho)
+            fabOptions.insertBefore(adminBtn, fabOptions.firstChild);
+        }
     }
 
     onSnapshot(query(collection(db_fire, "clientes"), where("userId", "==", uid)), s => {
@@ -358,6 +466,7 @@ document.getElementById('form-cliente').onsubmit = async (e) => {
         tel: document.getElementById('tel-cliente').value.replace(/\D/g, ''),
         userId: userLogado.uid
     });
+    log('novo_cliente', 'cadastro_cliente');
     e.target.reset(); alert("Cliente Salvo!");
 };
 
@@ -377,6 +486,7 @@ document.getElementById('form-venda').onsubmit = async (e) => {
             vencimento: d.toISOString().split('T')[0], pago: false, userId: userLogado.uid
         });
     }
+    log('nova_venda', 'venda');
     e.target.reset(); inputBusca.value = ""; clienteSelecionado = null; window.navegar('historico');
 };
 
@@ -408,6 +518,7 @@ window.abrirEdicaoCliente = (id) => {
 };
 
 window.salvarEdicaoCliente = async () => {
+    log('editou_cliente', 'modal_edit_cliente');
     await updateDoc(doc(db_fire, "clientes", clienteIdAtual), { 
         nome: document.getElementById('edit-cliente-nome').value, 
         tel: document.getElementById('edit-cliente-tel').value.replace(/\D/g, '')
@@ -416,7 +527,8 @@ window.salvarEdicaoCliente = async () => {
 };
 
 window.apagarCliente = async () => {
-    if(confirm("Deseja excluir este cliente?")) { 
+    if(confirm("Deseja excluir este cliente?")) {
+        log('excluiu_cliente', 'modal_edit_cliente');
         await deleteDoc(doc(db_fire, "clientes", clienteIdAtual)); 
         window.fecharModal('modal-edit-cliente'); 
     }
@@ -455,13 +567,15 @@ function renderHistorico() {
 }
 
 // --- AÇÕES VENDAS ---
-window.quitar = (id) => updateDoc(doc(db_fire, "vendas", id), {pago: true});
+window.quitar = (id) => { log('quitar_cobranca', 'historico'); return updateDoc(doc(db_fire, "vendas", id), {pago: true}); };
 window.abrirLembrete = (id) => {
+    log('abriu_lembrete', 'historico');
     vendaIdAtual = id; const v = db.vendas.find(x => x.id === id);
     document.getElementById('msg-whatsapp').value = `Olá ${v.nome}, lembrete de cobrança: R$ ${v.valor.toFixed(2)} (${v.desc}).`;
     document.getElementById('modal-lembrete').style.display = 'flex';
 };
 window.enviarWpp = () => {
+    log('enviou_lembrete_wpp', 'modal_lembrete');
     const v = db.vendas.find(x => x.id === vendaIdAtual);
     const msg = encodeURIComponent(document.getElementById('msg-whatsapp').value);
     window.open(`https://wa.me/55${v.tel}?text=${msg}`, '_blank');
@@ -473,6 +587,7 @@ window.abrirEdicao = (id) => {
     document.getElementById('modal-edit').style.display = 'flex';
 };
 window.salvarEdicao = async () => {
+    log('editou_cobranca', 'modal_edit');
     await updateDoc(doc(db_fire, "vendas", vendaIdAtual), { 
         desc: document.getElementById('edit-desc').value, 
         valor: parseFloat(document.getElementById('edit-valor').value) 
@@ -480,7 +595,8 @@ window.salvarEdicao = async () => {
     window.fecharModal('modal-edit');
 };
 window.apagarVenda = async () => {
-    if(confirm("Deseja apagar esta cobrança?")) { 
+    if(confirm("Deseja apagar esta cobrança?")) {
+        log('excluiu_cobranca', 'modal_edit');
         await deleteDoc(doc(db_fire, "vendas", vendaIdAtual)); 
         window.fecharModal('modal-edit'); 
     }
